@@ -69,39 +69,3 @@ newTrial( "welcome" ,
         .print()
         .wait()
     )
-
-// newTrial("instructions1",
-//     // newText("Welcome to the experiment!")
-//     //     .center()
-//     //     .print()
-//     // ,
-
-//     newText("In the following experiment, you will see words presented one after the other.")
-//         .center()
-//         .print()
-//     ,
-//     newText("Your job is to categorize each word as <b>ABSTRACT</b> or <b>CONCRETE</b>.")
-//         .center()
-//         .print()
-//     ,
-//     newText("<br>")
-//         .center()
-//         .print()
-//     ,
-//     newText("You can answer by pressing the corresponding <b>F</b> or the <b>J</b> key on your keyboard.")
-//         .center()
-//         .print()
-//     ,
-//     newText("Please make your evaluation as quickly as possible.")
-//         .center()
-//         .print()
-//     ,
-//     newText("<br>")
-//         .center()
-//         .print() 
-//     ,
-//     newButton("continue")
-//         .center()
-//         .print()
-//         .wait()
-//     )
