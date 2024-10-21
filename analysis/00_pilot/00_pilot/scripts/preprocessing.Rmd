@@ -102,7 +102,6 @@ unique(comments$Value)
 # get the IDs in the right way
 d.test <- d$Value[(d$PennElementName=="ID") & (d$Parameter == "Final")]
 
-print(d.test)
 
 d.IDs <- d %>% select(MD5.hash.of.participant.s.IP.address,ID,Value,Parameter,PennElementName) %>% 
   mutate(ID.true = if_else(PennElementName == "ID" & Parameter == "Final", Value, NA_character_)) %>%  # Value[(PennElementName=="ID") & (Parameter == "Final")])
@@ -112,16 +111,12 @@ d.IDs <- d %>% select(MD5.hash.of.participant.s.IP.address,ID,Value,Parameter,Pe
 
 d <- d %>%  merge(., d.IDs, by = c("MD5.hash.of.participant.s.IP.address"))
            
-```
 
-```{r}
 # get the relevant conc and val info for each word
 d.labels.test <- read.csv("../data/pilot_val_no_neutral.csv")[,c("Word","ConcValCombo")]
-names(d.labels.test)
 
 
 d <- inner_join(d, d.labels.test, by = "Word")
-names(d)
 
 ```
 
@@ -147,15 +142,12 @@ results <- results[,c("ID.true","Word")]
 
 d <- inner_join(d,results, by = c("ID.true","Word") )
 
-names(d)
-
 ```
 
 
 
 # Create an Accuracy Column
 ```{r}
-names(d)
 d$Response <- as.character(d$Response)
 d$ConcValCombo <- as.character(d$ConcValCombo)
 # Create an accuracy column that outputs 1 if participant Response matches our
@@ -194,11 +186,8 @@ nrow(d_TaskTime)
 ```{r}
 d_agr <- d %>% 
     filter(Parameter == "Selection") %>%
-    select(ID.true,Word,Label,ConcValCombo,Task,Response,Accuracy,EventTime,Value) %>% 
+    select(ID.true,Word,Label,ConcValCombo,Task,Response,Accuracy,EventTime,Value,ReactionTime) %>% 
   distinct()
-
-nrow(d_agr)
-names(d_agr)
 
 
 d_total <-  merge(d_agr, d_TaskTime, by = c("ID.true","Word"))
@@ -211,5 +200,55 @@ table(d_total$Response)
 # write.csv(d_total,"../data/processed.csv")
 
 ```
+
+# Compare the RT and ReactionTime columns
+```{r}
+d_total$ReactionTime <- as.numeric(d_total$ReactionTime)
+d_total$LogReactionTime <- log(d_total)
+
+
+agr = d_total %>%
+    group_by(Task,Word) %>%
+    summarize(MeanLogReactionTime = mean(LogReactionTime), 
+              CILow = ci.low(LogReactionTime), 
+              CIHigh = ci.high(LogReactionTime)) %>%
+    mutate(YMin = MeanLogReactionTime - CILow, 
+           YMax = MeanLogReactionTime + CIHigh)
+
+ggplot(agr, aes(x=MeanLogReactionTime, fill=Task)) +
+  geom_density(alpha = .4)
+
+ggplot(agr, aes(x=Task, y=MeanLogReactionTime,fill=Task)) + 
+    geom_violin(trim=FALSE,alpha=.4) +
+    geom_jitter(shape=16, position=position_jitter(0.2)) +
+    # geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position="dodge", show.legend = FALSE) +
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  guides(fill = "none")
+```
+
+```{r}
+
+d$RT <- as.numeric(d$RT)
+d$LogRT <- log(as.numeric(d$RT))
+agr = d %>%
+    group_by(Task,Word) %>%
+    summarize(MeanLogRT = mean(LogRT), 
+              CILow = ci.low(LogRT), 
+              CIHigh = ci.high(LogRT)) %>%
+    mutate(YMin = MeanLogRT - CILow, 
+           YMax = MeanLogRT + CIHigh)
+
+ggplot(agr, aes(x=MeanLogRT, fill=Task)) +
+  geom_density(alpha = .4)
+
+ggplot(agr, aes(x=Task, y=MeanLogRT,fill=Task)) + 
+    geom_violin(trim=FALSE,alpha=.4) +
+    geom_jitter(shape=16, position=position_jitter(0.2)) +
+    # geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position="dodge", show.legend = FALSE) +
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  guides(fill = "none")
+```
+
+
 
 

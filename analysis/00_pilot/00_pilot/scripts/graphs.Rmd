@@ -166,7 +166,8 @@ ggplot(agr, aes(x=Word, y=MeanLogRT,fill=Task)) +
     geom_jitter(shape=16, position=position_jitter(0.2)) +
     geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position="dodge", show.legend = FALSE) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-  # geom_boxplot()# guides(fill = "none", alpha = "none")
+  # geom_boxplot()
+  # guides(fill = "none", alpha = "none")
   # ylim(0,1)
 ```
 

@@ -1,0 +1,269 @@
+---
+title: "Analysis without outliers"
+author: "morgan moyer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+```{r setup, include=FALSE, warning=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(multcomp) # not available for this version of R
+library(stringr)
+library(textstem)
+library(tidyverse)
+theme_set(theme_bw())
+cbPalette <- c("#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73")
+this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(this.dir)
+source("../../../helpers.R")
+
+d <- read.csv("../data/processed.csv")
+```
+
+```{r}
+
+ggplot(d, aes(x=LogRT)) +
+  geom_histogram(binwidth = .1,fill = "lightblue", color = "black") +
+  facet_wrap(~Task)
+
+ggplot(d, aes(x=LogRT, fill=Task)) +
+  # facet_wrap(~BlockOrder) +
+  geom_density(alpha = .4)
+
+```
+
+
+```{r}
+# Remove subjects with RT higher than 3x IQR
+summary(d$LogRT)
+  #  Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  # 6.924   7.328   7.436   7.479   7.579  10.008 
+range(d$LogRT)
+
+hist(d$LogRT, breaks=100, col="lightblue", xlab="LogRT (ms)",
+        main="Histogram with Normal Curve")
+
+quantile(d$LogRT)
+IQR(d$LogRT)*3 # 0.7526289
+cutoff.high <- quantile(d$LogRT)[4] + IQR(d$LogRT)*3 # 8.419261
+cutoff.low <- quantile(d$LogRT)[2] - IQR(d$LogRT)*3# 6.5088838.419261
+
+
+# remove subjects with RT higher than 3 x IQR
+df.outliers.removed <- subset(d, (d$LogRT > cutoff.low) & (d$LogRT < cutoff.high))
+
+hist(df.outliers.removed$LogRT, col="lightblue", xlab="LogRT (ms)",
+        main="Histogram with Normal Curve")
+
+
+```
+
+
+```{r}
+ggplot(df.outliers.removed, aes(x=LogRT, fill=Task)) +
+  # facet_wrap(~BlockOrder) +
+  geom_density(alpha = .4)
+
+ggplot(df.outliers.removed, aes(x=LogRT, fill=Task)) +
+  facet_wrap(~BlockOrder) +
+  geom_density(alpha = .4)
+
+```
+
+```{r}
+ggplot(df.outliers.removed, aes(x = Accuracy, y = LogRT, fill = Task)) +
+  geom_violin(alpha = 0.7) + # Violin plot
+  geom_jitter(position = position_jitter(0.2), color = "black", size = 1.5, alpha = 0.5) + # Add jittered points
+  labs(title = "Reaction Time by Accuracy",
+       x = "Accuracy",
+       y = "Reaction Time (ms)")
+  # theme_minimal() +
+  # theme(legend.position = "none") # Remove legend
+```
+
+# convert everything to factors
+```{r, include=FALSE, warning=FALSE, echo=FALSE}
+str(d)
+
+convert_except <- function(df, exclude_cols) {
+  df[] <- lapply(names(df), function(col_name) {
+    if (!(col_name %in% exclude_cols)) {
+      return(as.factor(df[[col_name]]))  # Convert to factor if not in excluded columns
+    } else {
+      return(df[[col_name]])  # Leave the excluded columns unchanged
+    }
+  })
+  return(df)
+}
+# Specify columns to exclude from conversion
+exclude_columns <- c('RT', 'LogRT')
+
+# Convert all columns to factors except for 'a' and 'd'
+df_factors <- convert_except(df.outliers.removed, exclude_columns)
+
+# Check the structure of the modified data frame
+str(df_factors)
+
+```
+
+
+```{r, include=FALSE, warning=FALSE, echo=FALSE}
+contrasts(df_factors$ConcValCombo)
+contrasts(df_factors$Task)
+
+center = df_factors %>%
+  mutate(cTask = as.numeric(Task)-mean(as.numeric(Task)),
+         cAccuracy = as.numeric(Accuracy)-mean(as.numeric(Accuracy)),
+         cBlockOrder = as.numeric(BlockOrder)-mean(as.numeric(BlockOrder))
+         )
+  
+  # droplevels()
+```
+
+# Is there a difference between Semantic and Valence Tasks?
+Still No effect of task.
+
+```{r}
+
+m = lmer(LogRT ~ cTask + (1+cTask|ID.true) + (1+cTask|Word), data=center)
+# saveRDS(m.ms.ma.full, "../models/model-task-para.rds")
+
+# m <- readRDS("../models/m.rds")
+summary(m)
+```
+
+# Is there an Interaction between Task and WordType (ConcValCombo)?
+No.
+```{r}
+
+m = lmer(LogRT ~ cTask*ConcValCombo + (1+ConcValCombo+cTask|ID.true) + (1+cTask+ConcValCombo|Word), data=center)
+saveRDS(m, "../models/model-Task-ConcValCombo_outlier_excl.rds")
+
+# m <- readRDS("../models/model-Task-ConcValCombo_outlier_excl.rds")
+summary(m)
+```
+
+# Does Accuracy predict reaction time? 
+
+In other words, is reaction time affected by certainty about the categorization?
+- Yes, still.
+```{r}
+
+m = lmer(LogRT ~ cAccuracy + (1|ID.true) + (1|Word), data=center)
+
+summary(m)
+
+```
+
+## Is the previous effect explained by task effects?
+- Seems Not.
+```{r}
+
+m = lmer(LogRT ~ cAccuracy*cTask + (1+cTask|ID.true) + (1+cTask|Word), data=center)
+
+summary(m)
+
+```
+
+# Is it explained by block order?
+- No, but we find a main efect of block order.
+
+```{r}
+
+m = lmer(LogRT ~ cAccuracy*cBlockOrder + (1|ID.true) + (1+cBlockOrder|Word), data=center)
+
+summary(m)
+
+```
+
+# Main Effect of Block Order 
+
+## On RT
+- Yes
+```{r}
+m = lmer(LogRT ~ cBlockOrder + (1|ID.true) + (1+cBlockOrder|Word), data=center)
+
+summary(m)
+```
+
+## On Accuracy
+- marginally significant
+```{r}
+m = lmer(cAccuracy ~ cBlockOrder + (1|ID.true) + (1+cBlockOrder|Word), data=center)
+
+summary(m)
+```
+
+
+
+# effect of ConcValCombo on RT?
+nope
+```{r}
+
+m = lmer(LogRT ~ ConcValCombo + (1+ConcValCombo|ID.true) + (1|Word), data=center)
+
+summary(m)
+
+```
+
+
+
+# In the Concreteness task, is there a difference between concreteness and abstractness on RT?
+- Nope
+```{r}
+str(df_factors)
+sem <- df_factors %>% 
+  filter(Task == "Concrete") %>% 
+  mutate(
+         Semantic = ifelse(grepl("concrete", ConcValCombo), "concrete", 
+                    ifelse(grepl("abstract", ConcValCombo), "abstract", NA)),
+         Valence =  ifelse(grepl("positive", ConcValCombo), "positive", 
+                    ifelse(grepl("negative", ConcValCombo), "negative", NA)),
+        cConcValCombo = as.numeric(ConcValCombo) - mean(as.numeric(ConcValCombo)),
+        cSemantic = as.numeric(factor(Semantic)) - mean(as.numeric(factor(Semantic)))
+  )
+
+m = lmer(LogRT ~ cConcValCombo + (1+cConcValCombo|ID.true) + (1+cConcValCombo|Word), data=sem)
+summary(m)
+
+```
+
+
+```{r}
+m = lmer(LogRT ~ cSemantic + (1+cSemantic|ID.true) + (1|Word), data=sem)
+summary(m)
+
+```
+
+
+# In the Valence task , is there a difference between positive and negative on RT?
+- Nope.
+```{r}
+val <- df_factors %>% 
+  filter(Task == "Valence") %>% 
+  mutate(
+         Semantic = ifelse(grepl("concrete", ConcValCombo), "concrete", 
+                    ifelse(grepl("abstract", ConcValCombo), "abstract", NA)),
+         Valence = ifelse(grepl("positive", ConcValCombo), "positive", 
+                    ifelse(grepl("negative", ConcValCombo), "negative", NA)),
+         cConcValCombo = as.numeric(ConcValCombo) - mean(as.numeric(ConcValCombo)),
+         cValence = as.numeric(factor(Valence)) - mean(as.numeric(factor(Valence)))
+         )
+
+m = lmer(LogRT ~ cConcValCombo + (1+cConcValCombo|ID.true) + (1+cConcValCombo|Word), data=val)
+summary(m)
+
+```
+
+```{r}
+m = lmer(LogRT ~ cValence + (1+cValence|ID.true) + (1|Word), data=val)
+summary(m)
+
+```
+
+
+

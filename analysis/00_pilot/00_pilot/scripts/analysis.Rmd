@@ -87,4 +87,93 @@ m = lmer(LogRT ~ cTask*ConcValCombo + (1+ConcValCombo|ID.true) + (1+cTask+ConcVa
 summary(m)
 ```
 
+# Does Accuracy predict reaction time? 
+
+In other words, is reaction time affected by certainty about the categorization?
+```{r}
+
+m = lmer(LogRT ~ cAccuracy + (1|ID.true) + (1|Word), data=center)
+
+summary(m)
+
+```
+
+# Interaction between Task and Accuracy on RT?
+```{r}
+
+m = lmer(LogRT ~ cAccuracy*cTask + (1|ID.true) + (1+cTask|Word), data=center)
+
+summary(m)
+
+```
+
+# Simple effect of ConcValCombo on RT?
+marginal
+```{r}
+
+m = lmer(LogRT ~ ConcValCombo + (1+ConcValCombo|ID.true) + (1|Word), data=center)
+
+summary(m)
+
+```
+
+Not even an interaction
+```{r}
+
+m = lmer(LogRT ~ cTask*ConcValCombo + (1+ConcValCombo|ID.true) + (1+cTask|Word), data=center)
+
+summary(m)
+
+```
+
+
+# In the semantic task, is there a difference between concreteness and abstractness on RT?
+
+```{r}
+sem <- df_factors %>% 
+  filter(Task == "semantic") %>% 
+  mutate(cConcValCombo = as.numeric(ConcValCombo) - mean(as.numeric(ConcValCombo)),
+         Semantic = ifelse(grepl("concrete", ConcValCombo), "concrete", 
+                    ifelse(grepl("abstract", ConcValCombo), "abstract", NA)),
+         Valence =  ifelse(grepl("positive", ConcValCombo), "positive", 
+                    ifelse(grepl("negative", ConcValCombo), "negative", NA)),
+         cSemantic = as.numeric(Semantic) - mean(as.numeric(Semantic))
+         )
+
+m = lmer(LogRT ~ cConcValCombo + (1+cConcValCombo|ID.true) + (1+cConcValCombo|Word), data=sem)
+summary(m)
+
+```
+
+
+```{r}
+m = lmer(LogRT ~ Semantic + (1+Semantic|ID.true) + (1|Word), data=sem)
+summary(m)
+
+```
+
+
+# In the Valence task , is there a difference between positive and negative on RT?
+
+```{r}
+val <- df_factors %>% 
+  filter(Task == "valence") %>% 
+  mutate(cConcValCombo = as.numeric(ConcValCombo) - mean(as.numeric(ConcValCombo)),
+         Semantic = ifelse(grepl("concrete", ConcValCombo), "concrete", 
+                    ifelse(grepl("abstract", ConcValCombo), "abstract", NA)),
+         Valence = ifelse(grepl("positive", ConcValCombo), "positive", 
+                    ifelse(grepl("negative", ConcValCombo), "negative", NA)),
+         cValence = as.numeric(Valence) - mean(as.numeric(Valence))
+         )
+
+m = lmer(LogRT ~ cConcValCombo + (1+cConcValCombo|ID.true) + (1+cConcValCombo|Word), data=val)
+summary(m)
+
+```
+
+```{r}
+m = lmer(LogRT ~ Valence + (1+Valence|ID.true) + (1|Word), data=val)
+summary(m)
+
+```
 

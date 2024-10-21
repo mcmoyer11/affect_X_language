@@ -11,7 +11,7 @@
 
 <meta name="author" content="morgan moyer" />
 
-<meta name="date" content="2024-10-04" />
+<meta name="date" content="2024-10-08" />
 
 <title>Analysis</title>
 
@@ -352,7 +352,7 @@ display: none;
 
 <h1 class="title toc-ignore">Analysis</h1>
 <h4 class="author">morgan moyer</h4>
-<h4 class="date">2024-10-04</h4>
+<h4 class="date">2024-10-08</h4>
 
 </div>
 
@@ -492,6 +492,362 @@ summary(m)</code></pre>
 ## cTsk:CncVlCmbcncrt-p  0.391           0.626              
 ## optimizer (nloptwrap) convergence code: 0 (OK)
 ## boundary (singular) fit: see help(&#39;isSingular&#39;)</code></pre>
+</div>
+<div id="does-accuracy-predict-reaction-time" class="section level1">
+<h1>Does Accuracy predict reaction time?</h1>
+<p>In other words, is reaction time affected by certainty about the
+categorization?</p>
+<pre class="r"><code>m = lmer(LogRT ~ cAccuracy + (1|ID.true) + (1|Word), data=center)
+
+summary(m)</code></pre>
+<pre><code>## Linear mixed model fit by REML. t-tests use Satterthwaite&#39;s method [
+## lmerModLmerTest]
+## Formula: LogRT ~ cAccuracy + (1 | ID.true) + (1 | Word)
+##    Data: center
+## 
+## REML criterion at convergence: -483.8
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -2.9052 -0.6295 -0.1626  0.4097  7.2413 
+## 
+## Random effects:
+##  Groups   Name        Variance Std.Dev.
+##  ID.true  (Intercept) 0.021620 0.14704 
+##  Word     (Intercept) 0.002244 0.04737 
+##  Residual             0.038571 0.19640 
+## Number of obs: 1600, groups:  ID.true, 40; Word, 40
+## 
+## Fixed effects:
+##              Estimate Std. Error        df t value Pr(&gt;|t|)    
+## (Intercept) 7.494e+00  2.491e-02 4.619e+01  300.82   &lt;2e-16 ***
+## cAccuracy   7.572e-03  1.009e-02 1.551e+03    0.75    0.453    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Correlation of Fixed Effects:
+##           (Intr)
+## cAccuracy 0.000</code></pre>
+</div>
+<div id="interaction-between-task-and-accuracy-on-rt" class="section level1">
+<h1>Interaction between Task and Accuracy on RT?</h1>
+<pre class="r"><code>m = lmer(LogRT ~ cAccuracy*cTask + (1|ID.true) + (1+cTask|Word), data=center)
+
+summary(m)</code></pre>
+<pre><code>## Linear mixed model fit by REML. t-tests use Satterthwaite&#39;s method [
+## lmerModLmerTest]
+## Formula: LogRT ~ cAccuracy * cTask + (1 | ID.true) + (1 + cTask | Word)
+##    Data: center
+## 
+## REML criterion at convergence: -499.9
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -2.8718 -0.6065 -0.1322  0.4164  7.2312 
+## 
+## Random effects:
+##  Groups   Name        Variance Std.Dev. Corr
+##  ID.true  (Intercept) 0.019054 0.13804      
+##  Word     (Intercept) 0.002298 0.04793      
+##           cTask       0.005028 0.07091  0.28
+##  Residual             0.037275 0.19307      
+## Number of obs: 1600, groups:  ID.true, 40; Word, 40
+## 
+## Fixed effects:
+##                   Estimate Std. Error         df t value Pr(&gt;|t|)    
+## (Intercept)      7.495e+00  2.360e-02  4.606e+01 317.526   &lt;2e-16 ***
+## cAccuracy        9.128e-03  9.977e-03  1.533e+03   0.915   0.3604    
+## cTask           -1.109e-01  4.609e-02  4.243e+01  -2.406   0.0205 *  
+## cAccuracy:cTask -1.810e-02  1.993e-02  1.534e+03  -0.908   0.3638    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Correlation of Fixed Effects:
+##             (Intr) cAccrc cTask 
+## cAccuracy    0.000              
+## cTask        0.022 -0.007       
+## cAccrcy:cTs -0.007  0.011  0.000</code></pre>
+</div>
+<div id="simple-effect-of-concvalcombo-on-rt" class="section level1">
+<h1>Simple effect of ConcValCombo on RT?</h1>
+<p>marginal</p>
+<pre class="r"><code>m = lmer(LogRT ~ ConcValCombo + (1+ConcValCombo|ID.true) + (1|Word), data=center)</code></pre>
+<pre><code>## boundary (singular) fit: see help(&#39;isSingular&#39;)</code></pre>
+<pre class="r"><code>summary(m)</code></pre>
+<pre><code>## Linear mixed model fit by REML. t-tests use Satterthwaite&#39;s method [
+## lmerModLmerTest]
+## Formula: LogRT ~ ConcValCombo + (1 + ConcValCombo | ID.true) + (1 | Word)
+##    Data: center
+## 
+## REML criterion at convergence: -523.4
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -2.8073 -0.6165 -0.1398  0.4256  7.1077 
+## 
+## Random effects:
+##  Groups   Name                          Variance  Std.Dev. Corr             
+##  ID.true  (Intercept)                   0.0259231 0.16101                   
+##           ConcValComboabstract-positive 0.0008992 0.02999  -0.32            
+##           ConcValComboconcrete-negative 0.0088182 0.09391  -0.26 -0.59      
+##           ConcValComboconcrete-positive 0.0049479 0.07034  -0.52 -0.40  0.96
+##  Word     (Intercept)                   0.0021616 0.04649                   
+##  Residual                               0.0362319 0.19035                   
+## Number of obs: 1600, groups:  ID.true, 40; Word, 40
+## 
+## Fixed effects:
+##                               Estimate Std. Error       df t value Pr(&gt;|t|)    
+## (Intercept)                    7.52361    0.03090 54.89356 243.482   &lt;2e-16 ***
+## ConcValComboabstract-positive -0.03788    0.02522 35.06856  -1.502   0.1421    
+## ConcValComboconcrete-negative -0.02711    0.02888 48.17266  -0.939   0.3525    
+## ConcValComboconcrete-positive -0.05156    0.02715 43.71473  -1.899   0.0642 .  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Correlation of Fixed Effects:
+##                 (Intr) CncVlCmbb- CncVlCmbcncrt-n
+## CncVlCmbbs-     -0.444                           
+## CncVlCmbcncrt-n -0.453  0.364                    
+## CncVlCmbcncrt-p -0.541  0.417      0.593         
+## optimizer (nloptwrap) convergence code: 0 (OK)
+## boundary (singular) fit: see help(&#39;isSingular&#39;)</code></pre>
+<p>Not even an interaction</p>
+<pre class="r"><code>m = lmer(LogRT ~ cTask*ConcValCombo + (1+ConcValCombo|ID.true) + (1+cTask|Word), data=center)</code></pre>
+<pre><code>## boundary (singular) fit: see help(&#39;isSingular&#39;)</code></pre>
+<pre class="r"><code>summary(m)</code></pre>
+<pre><code>## Linear mixed model fit by REML. t-tests use Satterthwaite&#39;s method [
+## lmerModLmerTest]
+## Formula: LogRT ~ cTask * ConcValCombo + (1 + ConcValCombo | ID.true) +  
+##     (1 + cTask | Word)
+##    Data: center
+## 
+## REML criterion at convergence: -537.5
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -2.8289 -0.6058 -0.1499  0.4343  7.0380 
+## 
+## Random effects:
+##  Groups   Name                          Variance Std.Dev. Corr             
+##  ID.true  (Intercept)                   0.024675 0.15708                   
+##           ConcValComboabstract-positive 0.001007 0.03173  -0.58            
+##           ConcValComboconcrete-negative 0.009328 0.09658  -0.34 -0.56      
+##           ConcValComboconcrete-positive 0.005171 0.07191  -0.54 -0.36  0.97
+##  Word     (Intercept)                   0.002196 0.04686                   
+##           cTask                         0.005492 0.07411  0.29             
+##  Residual                               0.034851 0.18669                   
+## Number of obs: 1600, groups:  ID.true, 40; Word, 40
+## 
+## Fixed effects:
+##                                       Estimate Std. Error         df t value
+## (Intercept)                          7.5236053  0.0303909 54.4648654 247.561
+## cTask                               -0.0908058  0.0580108 48.9887691  -1.565
+## ConcValComboabstract-positive       -0.0378768  0.0252709 35.5310561  -1.499
+## ConcValComboconcrete-negative       -0.0271099  0.0290970 49.0352369  -0.932
+## ConcValComboconcrete-positive       -0.0515647  0.0272528 43.8762369  -1.892
+## cTask:ConcValComboabstract-positive -0.0431129  0.0435443 33.9335180  -0.990
+## cTask:ConcValComboconcrete-negative -0.0366571  0.0522318 47.6551679  -0.702
+## cTask:ConcValComboconcrete-positive  0.0005746  0.0480883 43.3167124   0.012
+##                                     Pr(&gt;|t|)    
+## (Intercept)                           &lt;2e-16 ***
+## cTask                                 0.1239    
+## ConcValComboabstract-positive         0.1428    
+## ConcValComboconcrete-negative         0.3561    
+## ConcValComboconcrete-positive         0.0651 .  
+## cTask:ConcValComboabstract-positive   0.3291    
+## cTask:ConcValComboconcrete-negative   0.4862    
+## cTask:ConcValComboconcrete-positive   0.9905    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Correlation of Fixed Effects:
+##                      (Intr) cTask  CncVlCmbb- CncVlCmbcncrt-n CncVlCmbcncrt-p
+## cTask                 0.057                                                  
+## CncVlCmbbs-          -0.494 -0.068                                           
+## CncVlCmbcncrt-n      -0.494 -0.059  0.359                                    
+## CncVlCmbcncrt-p      -0.556 -0.063  0.416      0.600                         
+## cTsk:CncVlCmbb-      -0.075 -0.470  0.182      0.079           0.084         
+## cTsk:CncVlCmbcncrt-n -0.063 -0.468  0.076      0.131           0.070         
+## cTsk:CncVlCmbcncrt-p -0.068 -0.542  0.082      0.071           0.152         
+##                      cTsk:CncVlCmbb- cTsk:CncVlCmbcncrt-n
+## cTask                                                    
+## CncVlCmbbs-                                              
+## CncVlCmbcncrt-n                                          
+## CncVlCmbcncrt-p                                          
+## cTsk:CncVlCmbb-                                          
+## cTsk:CncVlCmbcncrt-n  0.320                              
+## cTsk:CncVlCmbcncrt-p  0.390           0.627              
+## optimizer (nloptwrap) convergence code: 0 (OK)
+## boundary (singular) fit: see help(&#39;isSingular&#39;)</code></pre>
+</div>
+<div id="in-the-semantic-task-is-there-a-difference-between-concreteness-and-abstractness-on-rt" class="section level1">
+<h1>In the semantic task, is there a difference between concreteness and
+abstractness on RT?</h1>
+<pre class="r"><code>sem &lt;- df_factors %&gt;% 
+  filter(Task == &quot;semantic&quot;) %&gt;% 
+  mutate(cConcValCombo = as.numeric(ConcValCombo) - mean(as.numeric(ConcValCombo)),
+         Semantic = ifelse(grepl(&quot;concrete&quot;, ConcValCombo), &quot;concrete&quot;, 
+                    ifelse(grepl(&quot;abstract&quot;, ConcValCombo), &quot;abstract&quot;, NA)),
+         Valence =  ifelse(grepl(&quot;positive&quot;, ConcValCombo), &quot;positive&quot;, 
+                    ifelse(grepl(&quot;negative&quot;, ConcValCombo), &quot;negative&quot;, NA)),
+         cSemantic = as.numeric(Semantic) - mean(as.numeric(Semantic))
+         )</code></pre>
+<pre><code>## Warning: There were 2 warnings in `mutate()`.
+## The first warning was:
+## ℹ In argument: `cSemantic = as.numeric(Semantic) - mean(as.numeric(Semantic))`.
+## Caused by warning:
+## ! NAs introduced by coercion
+## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.</code></pre>
+<pre class="r"><code>m = lmer(LogRT ~ cConcValCombo + (1+cConcValCombo|ID.true) + (1+cConcValCombo|Word), data=sem)
+summary(m)</code></pre>
+<pre><code>## Linear mixed model fit by REML. t-tests use Satterthwaite&#39;s method [
+## lmerModLmerTest]
+## Formula: LogRT ~ cConcValCombo + (1 + cConcValCombo | ID.true) + (1 +  
+##     cConcValCombo | Word)
+##    Data: sem
+## 
+## REML criterion at convergence: -174
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -2.6388 -0.5975 -0.1515  0.4697  6.6232 
+## 
+## Random effects:
+##  Groups   Name          Variance  Std.Dev. Corr 
+##  Word     (Intercept)   0.0015891 0.03986       
+##           cConcValCombo 0.0005564 0.02359  -0.67
+##  ID.true  (Intercept)   0.0226549 0.15052       
+##           cConcValCombo 0.0021992 0.04690  -0.16
+##  Residual               0.0402566 0.20064       
+## Number of obs: 800, groups:  Word, 40; ID.true, 20
+## 
+## Fixed effects:
+##               Estimate Std. Error       df t value Pr(&gt;|t|)    
+## (Intercept)    7.55092    0.03519 20.72384 214.579   &lt;2e-16 ***
+## cConcValCombo -0.01609    0.01410 24.01902  -1.141    0.265    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Correlation of Fixed Effects:
+##             (Intr)
+## cConcValCmb -0.168</code></pre>
+<pre class="r"><code>m = lmer(LogRT ~ Semantic + (1+Semantic|ID.true) + (1|Word), data=sem)
+summary(m)</code></pre>
+<pre><code>## Linear mixed model fit by REML. t-tests use Satterthwaite&#39;s method [
+## lmerModLmerTest]
+## Formula: LogRT ~ Semantic + (1 + Semantic | ID.true) + (1 | Word)
+##    Data: sem
+## 
+## REML criterion at convergence: -201.2
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -2.8763 -0.5939 -0.1455  0.4693  6.2432 
+## 
+## Random effects:
+##  Groups   Name             Variance Std.Dev. Corr 
+##  Word     (Intercept)      0.00245  0.0495        
+##  ID.true  (Intercept)      0.02919  0.1708        
+##           Semanticconcrete 0.01867  0.1366   -0.48
+##  Residual                  0.03829  0.1957        
+## Number of obs: 800, groups:  Word, 40; ID.true, 20
+## 
+## Fixed effects:
+##                  Estimate Std. Error       df t value Pr(&gt;|t|)    
+## (Intercept)       7.56085    0.04096 21.89347 184.596   &lt;2e-16 ***
+## Semanticconcrete -0.02216    0.03701 26.18774  -0.599    0.555    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Correlation of Fixed Effects:
+##             (Intr)
+## Semntccncrt -0.512</code></pre>
+</div>
+<div id="in-the-valence-task-is-there-a-difference-between-positive-and-negative-on-rt" class="section level1">
+<h1>In the Valence task , is there a difference between positive and
+negative on RT?</h1>
+<pre class="r"><code>val &lt;- df_factors %&gt;% 
+  filter(Task == &quot;valence&quot;) %&gt;% 
+  mutate(cConcValCombo = as.numeric(ConcValCombo) - mean(as.numeric(ConcValCombo)),
+         Semantic = ifelse(grepl(&quot;concrete&quot;, ConcValCombo), &quot;concrete&quot;, 
+                    ifelse(grepl(&quot;abstract&quot;, ConcValCombo), &quot;abstract&quot;, NA)),
+         Valence = ifelse(grepl(&quot;positive&quot;, ConcValCombo), &quot;positive&quot;, 
+                    ifelse(grepl(&quot;negative&quot;, ConcValCombo), &quot;negative&quot;, NA)),
+         cValence = as.numeric(Valence) - mean(as.numeric(Valence))
+         )</code></pre>
+<pre><code>## Warning: There were 2 warnings in `mutate()`.
+## The first warning was:
+## ℹ In argument: `cValence = as.numeric(Valence) - mean(as.numeric(Valence))`.
+## Caused by warning:
+## ! NAs introduced by coercion
+## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.</code></pre>
+<pre class="r"><code>m = lmer(LogRT ~ cConcValCombo + (1+cConcValCombo|ID.true) + (1+cConcValCombo|Word), data=val)</code></pre>
+<pre><code>## boundary (singular) fit: see help(&#39;isSingular&#39;)</code></pre>
+<pre class="r"><code>summary(m)</code></pre>
+<pre><code>## Linear mixed model fit by REML. t-tests use Satterthwaite&#39;s method [
+## lmerModLmerTest]
+## Formula: LogRT ~ cConcValCombo + (1 + cConcValCombo | ID.true) + (1 +  
+##     cConcValCombo | Word)
+##    Data: val
+## 
+## REML criterion at convergence: -372
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -2.5855 -0.5896 -0.1339  0.3837  7.3751 
+## 
+## Random effects:
+##  Groups   Name          Variance  Std.Dev. Corr 
+##  Word     (Intercept)   4.675e-03 0.068377      
+##           cConcValCombo 2.975e-05 0.005454 -1.00
+##  ID.true  (Intercept)   1.538e-02 0.124016      
+##           cConcValCombo 2.160e-05 0.004647 -1.00
+##  Residual               3.147e-02 0.177406      
+## Number of obs: 800, groups:  Word, 40; ID.true, 20
+## 
+## Fixed effects:
+##               Estimate Std. Error       df t value Pr(&gt;|t|)    
+## (Intercept)    7.43911    0.03043 24.46472 244.445   &lt;2e-16 ***
+## cConcValCombo -0.01276    0.01122 38.40317  -1.137    0.262    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Correlation of Fixed Effects:
+##             (Intr)
+## cConcValCmb -0.139
+## optimizer (nloptwrap) convergence code: 0 (OK)
+## boundary (singular) fit: see help(&#39;isSingular&#39;)</code></pre>
+<pre class="r"><code>m = lmer(LogRT ~ Valence + (1+Valence|ID.true) + (1|Word), data=val)
+summary(m)</code></pre>
+<pre><code>## Linear mixed model fit by REML. t-tests use Satterthwaite&#39;s method [
+## lmerModLmerTest]
+## Formula: LogRT ~ Valence + (1 + Valence | ID.true) + (1 | Word)
+##    Data: val
+## 
+## REML criterion at convergence: -377.1
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -2.6268 -0.5959 -0.1449  0.3908  7.3195 
+## 
+## Random effects:
+##  Groups   Name            Variance Std.Dev. Corr 
+##  Word     (Intercept)     0.004702 0.06857       
+##  ID.true  (Intercept)     0.018894 0.13746       
+##           Valencepositive 0.001428 0.03778  -0.74
+##  Residual                 0.031136 0.17645       
+## Number of obs: 800, groups:  Word, 40; ID.true, 20
+## 
+## Fixed effects:
+##                 Estimate Std. Error       df t value Pr(&gt;|t|)    
+## (Intercept)      7.45548    0.03546 27.45063 210.229   &lt;2e-16 ***
+## Valencepositive -0.03264    0.02641 37.23858  -1.236    0.224    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Correlation of Fixed Effects:
+##             (Intr)
+## Valencepstv -0.541</code></pre>
 </div>
 
 

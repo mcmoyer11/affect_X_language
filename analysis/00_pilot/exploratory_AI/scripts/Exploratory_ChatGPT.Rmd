@@ -1,0 +1,416 @@
+---
+title: 'Exploratory: ChatGPT'
+author: "morgan moyer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(multcomp) # not available for this version of R
+library(stringr)
+library(textstem)
+library(tidyverse)
+library(car)
+library(MASS)
+library(irr)
+theme_set(theme_bw())
+cbPalette <- c("#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73")
+this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(this.dir)
+source("../../../helpers.R")
+```
+
+# Goals
+
+1. Will/does ChatGPT replicate the categorization results we have?
+
+2. What words will ChatGPT choose as most pos/neg and most conc/abs?
+- How does this compare to the 40 most extreme cases given warriner/brysbaert results?
+
+```{r, echo=FALSE}
+human <- read.csv("../../00_pilot/data/processed.csv")
+human$DataSource <- "human_exp"
+human$LogRT <- log(human$RT)
+
+
+corpus.inter <- read.csv("../data/extreme_intersection.csv")
+corpus.inter$DataSource <- "human_norming_intersective"
+
+corpus.non.inter <- read.csv("../data/extreme.csv")
+corpus.non.inter$DataSource <- "human_norming"
+
+# ChatGPT using the same words as the human data
+gpt.pilot.conc <- read.csv("../data/chatgpt_40pilot_concreteness.txt", sep="\t")
+gpt.pilot.conc$DataSource <- "ChatGPT_pilot"
+gpt.pilot.val <- read.csv("../data/chatgpt_40pilot_valence_no_neutral.txt", sep="\t")
+gpt.pilot.val$DataSource <- "ChatGPT_pilot"
+
+# ChatGPT choosing the words from the "complete" word list
+gpt.total.conc <- read.csv("../data/GPT_40_conc.txt", sep="\t")
+gpt.total.conc$DataSource <- "ChatGPT_total"
+names(gpt.total.conc)[names(gpt.total.conc) == "Estimated...Concrete"] <- "Concrete.."
+names(gpt.total.conc)[names(gpt.total.conc) == "Estimated...Abstract"] <- "Abstract.."
+
+
+gpt.total.val <- read.csv("../data/GPT_40_val.txt", sep="\t")
+gpt.total.val$DataSource <- "ChatGPT_total"
+names(gpt.total.val)[names(gpt.total.val) == "Estimated...Positive"] <- "Positive.."
+names(gpt.total.val)[names(gpt.total.val) == "Estimated...Negative"] <- "Negative.."
+
+# ChatGPT choosing the words from the "complete" word list
+gpt.inter.val <- read.csv("../data/chatgpt_extreme-intersection_valence.txt", sep="\t")
+gpt.inter.val$DataSource <- "ChatGPT_extreme_inter"
+
+gpt.inter.conc <- read.csv("../data/chatgpt_extreme-intersection_concreteness.txt", sep="\t")
+gpt.inter.conc$DataSource <- "ChatGPT_extreme_inter"
+
+# ChatGPT choosing the words from the "complete" word list
+gpt.non.inter.val <- read.csv("../data/chatgpt_extreme_valence.txt", sep="\t")
+gpt.non.inter.val$DataSource <- "ChatGPT_extreme"
+
+gpt.non.inter.conc <- read.csv("../data/chatgpt_extreme_concrete.txt", sep="\t")
+gpt.non.inter.conc$DataSource <- "ChatGPT_extreme"
+```
+
+
+# Preprocessing
+```{r, echo=FALSE}
+# Convert 
+conc <- human %>% 
+  filter(Task == "semantic")
+nrow(conc)
+val <- human %>% 
+  filter(Task == "valence")
+nrow(val)
+
+conc.agr <- conc %>% 
+  mutate(nResponse = ifelse(Response == "concrete", 1, 0)) %>% 
+  select(Word, nResponse, DataSource) %>%
+  group_by(Word) %>% 
+  # refactor
+  summarize( PropConcrete = mean(nResponse),
+             DataSource = first(DataSource))
+
+nrow(conc.agr)
+# head(conc.agr)
+
+val.agr <- val %>% 
+  # refactor
+    mutate(nResponse = ifelse(Response == "positive", 1, 0)) %>% 
+    select(Word, nResponse, DataSource) %>%
+    group_by(Word) %>% 
+    summarize(PropPositive = mean(nResponse),
+              DataSource = first(DataSource))  
+nrow(val.agr)
+length(unique(val.agr$Word))
+
+# head(val.agr)
+```
+
+
+```{r}
+# Define the function to process a single data frame and create a new data frame with .prop added to its name
+process_and_rename_conc_dfs <- function(df_list) {
+  # Iterate over the list of data frames
+  for (df_name in names(df_list)) {
+    # Process the data frame
+    processed_df <- df_list[[df_name]] %>%
+      mutate(
+        Concrete.. = as.numeric(gsub("%", "", Concrete..)),  # Remove % and convert to numeric
+        PropConcrete = Concrete.. / 100                     # Convert to proportion
+      ) %>%
+      select(-c(Concrete.., Abstract..))                     # Drop the unwanted columns
+
+    # Dynamically assign the new data frame with ".prop" added to the name
+    new_name <- paste0(df_name, ".prop")
+    assign(new_name, processed_df, envir = .GlobalEnv)  # Assign it to the global environment
+  }
+}
+
+# Example usage
+conc_list <- list(gpt.pilot.conc = gpt.pilot.conc, 
+                gpt.total.conc = gpt.total.conc,
+                gpt.inter.conc = gpt.inter.conc,
+                gpt.non.inter.conc = gpt.non.inter.conc
+                )  # Replace with actual data frames
+process_and_rename_conc_dfs(conc_list)
+
+# Now you should have gpt.pilot.conc.prop, df2.prop, and df3.prop created in the environment.
+
+```
+
+
+
+```{r}
+
+# Define the function to process a single data frame and create a new data frame with .prop added to its name
+process_and_rename_val_dfs <- function(df_list) {
+  # Iterate over the list of data frames
+  for (df_name in names(df_list)) {
+    # Process the data frame
+    processed_df <- df_list[[df_name]] %>%
+      mutate(
+        Positive.. = as.numeric(gsub("%", "", Positive..)),  # Remove % and convert to numeric
+        PropPositive = Positive.. / 100                     # Convert to proportion
+      ) %>%
+      select(-c(Positive.., Negative..))                     # Drop the unwanted columns
+
+    # Dynamically assign the new data frame with ".prop" added to the name
+    new_name <- paste0(df_name, ".prop")
+    assign(new_name, processed_df, envir = .GlobalEnv)  # Assign it to the global environment
+  }
+}
+
+val_list <- list(gpt.pilot.val = gpt.pilot.val, 
+                gpt.total.val = gpt.total.val,
+                gpt.inter.val = gpt.inter.val,
+                gpt.non.inter.val = gpt.non.inter.val
+                )  # Replace with actual data frames
+process_and_rename_val_dfs(val_list)
+
+# Now you should have gpt.pilot.conc.prop, df2.prop, and df3.prop created in the environment.
+
+```
+
+
+# Take a look quickly at the data
+## Human pilot
+```{r,fig.width=10, fig.height=5, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=val.agr, aes(x=Word,y=PropPositive,fill=Word)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Word,ncol=5) +
+  # theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        # axis.title.x = element_blank()) # Remove x-axis title
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    ggtitle("Human Responses for Original Pilot Word List") +
+
+  guides(fill = "none")
+
+```
+
+## GPT pilot
+```{r,fig.width=10, fig.height=5, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=gpt.pilot.val.prop, aes(x=Word,y=PropPositive,fill=Word)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Word,ncol=5) +
+  # theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        # axis.title.x = element_blank()) # Remove x-axis title
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("ChatGPT Estimate of Human Responses for Original Pilot Word List") +
+  guides(fill = "none")
+
+```
+
+
+```{r,fig.width=10, fig.height=5, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=conc.agr, aes(x=Word,y=PropConcrete,fill=Word)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Word,ncol=5) +
+  # theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        # axis.title.x = element_blank()) # Remove x-axis title
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    ggtitle("Human Responses for Original Pilot Word List") +
+
+  guides(fill = "none")
+
+```
+
+## GPT pilot
+```{r,fig.width=10, fig.height=5, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=gpt.pilot.val.prop, aes(x=Word,y=PropPositive,fill=Word)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Word,ncol=5) +
+  # theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        # axis.title.x = element_blank()) # Remove x-axis title
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("ChatGPT Estimate of Human Responses for Original Pilot Word List") +
+  guides(fill = "none")
+
+```
+
+
+
+
+Sanity check tht its the same words
+```{r, echo=FALSE}
+# Conc
+are_identical <- identical(gpt.pilot.conc.prop$Word, conc.agr$Word)
+print(are_identical)
+
+# Find common values
+common_values <- intersect(gpt.pilot.conc.prop$Word, conc.agr$Word)
+length(common_values)
+
+# Val
+are_identical <- identical(gpt.pilot.val.prop$Word, val.agr$Word)
+print(are_identical)
+
+# Find common values
+common_values <- intersect(gpt.pilot.val.prop$Word, val.agr$Word)
+length(common_values)
+
+
+```
+
+
+
+```{r}
+
+pilot.val = rbind(gpt.pilot.val.prop,val.agr)
+nrow(pilot.val)
+head(pilot.val)
+
+pilot.conc = rbind(gpt.pilot.conc.prop,conc.agr)
+nrow(pilot.conc)
+head(pilot.conc)
+
+```
+
+# Q1: does ChatGPT replicate our human results?
+compare human results with 
+
+## For Valence, how much agreement was there with chatGPT
+Not alot
+
+```{r, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=pilot.val, aes(x=DataSource,y=mean(PropPositive),fill=DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Task) +
+  ggtitle("Valence Responses for Original Pilot Word List by DataSource") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r, fig.width=10, height=5, echo=FALSE}
+# Boxplot of proportion_yes by DataSource and Word
+ggplot(pilot.val, aes(x = reorder(Word,PropPositive), y = PropPositive, fill = DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  labs(title = "Proportion of 'Positive' Responses by Word and DataSource",
+       x = "Word",
+       y = "Proportion of Positive Responses") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r,fig.width=10, fig.height=15, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=pilot.val, aes(x=DataSource,y=PropPositive,fill=DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~Word,ncol=5) +
+  theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        axis.title.x = element_blank()) # Remove x-axis title
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  # guides(fill = "none")
+```
+
+## Looking at agreement
+
+### Exact Matches (Proportion of Agreement)
+```{r, echo=FALSE}
+X = pilot.val[pilot.val$DataSource == "ChatGPT_pilot",]$PropPositive
+Y = pilot.val[pilot.val$DataSource == "human_exp",]$PropPositive
+
+# Check for agreement between 'Response' columns
+agreement <- X == Y
+
+# Proportion of exact matches
+prop_agreement <- mean(agreement)
+print(prop_agreement)
+
+```
+
+### Cohen's Kappa statistic for agreement
+```{r}
+# Install the irr package if necessary
+# install.packages("irr")
+
+
+# Cohen's Kappa between two categorical columns
+kappa_result <- kappa2(data.frame(X, Y))
+print(kappa_result)
+# The output will provide a kappa statistic (value), where:
+# 
+#     0.81 - 1.00 = Almost perfect agreement
+#     0.61 - 0.80 = Substantial agreement
+#     0.41 - 0.60 = Moderate agreement
+#     0.21 - 0.40 = Fair agreement
+#     0.00 - 0.20 = Slight agreement
+
+```
+
+
+## For Concreteness, how much agreement was there with chatGPT?
+Not alot
+
+```{r}
+dodge = position_dodge(.9)
+ggplot(data=pilot.conc, aes(x=DataSource,y=mean(PropConcrete),fill=DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Task) +
+  ggtitle("Concreteness Responses for Original Pilot Word List by DataSource") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r, fig.width=10, height=5 }
+# Boxplot of proportion_yes by DataSource and Word
+ggplot(pilot.conc, aes(x = reorder(Word,PropConcrete), y = PropConcrete, fill = DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  labs(title = "Proportion of 'Concrete' Responses by Word and DataSource",
+       x = "Word",
+       y = "Proportion of Concrete Responses") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r,fig.width=10, fig.height=15}
+dodge = position_dodge(.9)
+ggplot(data=pilot.conc, aes(x=DataSource,y=PropConcrete,fill=DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~Word,ncol=5) +
+  theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        axis.title.x = element_blank()) # Remove x-axis title
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  # guides(fill = "none")
+```
+
+## Looking at agreement
+
+### Exact Matches (Proportion of Agreement)
+```{r}
+X = pilot.conc[pilot.conc$DataSource == "ChatGPT_pilot",]$PropConcrete
+Y = pilot.conc[pilot.conc$DataSource == "human_exp",]$PropConcrete
+
+# Check for agreement between 'Response' columns
+agreement <- X == Y
+
+# Proportion of exact matches
+prop_agreement <- mean(agreement)
+print(prop_agreement)
+
+```
+
+### Cohen's Kappa statistic to measure agreement
+
+```{r}
+
+# Cohen's Kappa between two categorical columns
+kappa_result <- kappa2(data.frame(X, Y))
+print(kappa_result)
+
+# The output will provide a kappa statistic (value), where:
+# 
+#     0.81 - 1.00 = Almost perfect agreement
+#     0.61 - 0.80 = Substantial agreement
+#     0.41 - 0.60 = Moderate agreement
+#     0.21 - 0.40 = Fair agreement
+#     0.00 - 0.20 = Slight agreement
+
+```
+
+
