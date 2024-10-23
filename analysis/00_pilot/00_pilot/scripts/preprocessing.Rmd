@@ -204,10 +204,11 @@ table(d_total$Response)
 # Compare the RT and ReactionTime columns
 ```{r}
 d_total$ReactionTime <- as.numeric(d_total$ReactionTime)
-d_total$LogReactionTime <- log(d_total)
+d_total$LogReactionTime <- log(d_total$ReactionTime)
+d_total$RT <- as.numeric(d_total$RT)
+d_total$LogRT <- log(d_total$RT)
 
-
-agr = d_total %>%
+agr.rt1 = d_total %>%
     group_by(Task,Word) %>%
     summarize(MeanLogReactionTime = mean(LogReactionTime), 
               CILow = ci.low(LogReactionTime), 
@@ -215,22 +216,7 @@ agr = d_total %>%
     mutate(YMin = MeanLogReactionTime - CILow, 
            YMax = MeanLogReactionTime + CIHigh)
 
-ggplot(agr, aes(x=MeanLogReactionTime, fill=Task)) +
-  geom_density(alpha = .4)
-
-ggplot(agr, aes(x=Task, y=MeanLogReactionTime,fill=Task)) + 
-    geom_violin(trim=FALSE,alpha=.4) +
-    geom_jitter(shape=16, position=position_jitter(0.2)) +
-    # geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position="dodge", show.legend = FALSE) +
-  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  guides(fill = "none")
-```
-
-```{r}
-
-d$RT <- as.numeric(d$RT)
-d$LogRT <- log(as.numeric(d$RT))
-agr = d %>%
+agr.rt2 = d_total %>%
     group_by(Task,Word) %>%
     summarize(MeanLogRT = mean(LogRT), 
               CILow = ci.low(LogRT), 
@@ -238,10 +224,30 @@ agr = d %>%
     mutate(YMin = MeanLogRT - CILow, 
            YMax = MeanLogRT + CIHigh)
 
-ggplot(agr, aes(x=MeanLogRT, fill=Task)) +
+```
+
+```{r}
+
+
+ggplot(agr.rt1, aes(x=MeanLogReactionTime, fill=Task)) +
   geom_density(alpha = .4)
 
-ggplot(agr, aes(x=Task, y=MeanLogRT,fill=Task)) + 
+ggplot(agr.rt2, aes(x=MeanLogRT, fill=Task)) +
+  geom_density(alpha = .4)
+```
+
+
+```{r}
+
+ggplot(agr.rt1, aes(x=Task, y=MeanLogReactionTime,fill=Task)) + 
+    geom_violin(trim=FALSE,alpha=.4) +
+    geom_jitter(shape=16, position=position_jitter(0.2)) +
+    # geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position="dodge", show.legend = FALSE) +
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  guides(fill = "none")
+
+
+ggplot(agr.rt2, aes(x=Task, y=MeanLogRT,fill=Task)) + 
     geom_violin(trim=FALSE,alpha=.4) +
     geom_jitter(shape=16, position=position_jitter(0.2)) +
     # geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position="dodge", show.legend = FALSE) +

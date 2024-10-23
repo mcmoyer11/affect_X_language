@@ -1,0 +1,370 @@
+---
+title: "Graphs after removing outliers, using ReactionTime Column"
+author: "morgan moyer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+```{r setup, include=FALSE, warning=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(multcomp) # not available for this version of R
+library(stringr)
+library(textstem)
+library(tidyverse)
+theme_set(theme_bw())
+cbPalette <- c("#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73")
+this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(this.dir)
+source("../../../helpers.R")
+
+d <- read.csv("../data/processed.csv")
+```
+
+# Looking at overall Log ReactionTime for the data
+
+Before removing outliers
+
+## Summary Stats
+```{r}
+
+ggplot(d, aes(ReactionTime, fill=Task)) +
+  geom_density(alpha = .5)
+
+summary(d$ReactionTime)
+```
+
+Long tail justifies outlier removal?
+```{r}
+ggplot(d, aes(LogReactionTime, fill=Task)) +
+  geom_density(alpha = .5)
+
+summary(d$LogReactionTime)
+```
+
+# Remove outliers
+
+
+```{r}
+# Remove subjects with ReactionTime higher than 3x IQR
+summary(d$LogReactionTime)
+  #  Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  # 6.924   7.328   7.436   7.479   7.579  10.008 
+range(d$LogReactionTime)
+
+hist(d$LogReactionTime, breaks=100, col="lightblue", xlab="LogReactionTime (ms)",
+        main="Histogram with Normal Curve")
+
+quantile(d$LogReactionTime)
+IQR(d$LogReactionTime)*3 # 0.7526289
+cutoff.high <- quantile(d$LogReactionTime)[4] + IQR(d$LogReactionTime)*3 # 8.419261
+cutoff.low <- quantile(d$LogReactionTime)[2] - IQR(d$LogReactionTime)*3# 6.5088838.419261
+
+
+# remove subjects with ReactionTime higher than 3 x IQR
+df.outliers.removed <- subset(d, (d$LogReactionTime > cutoff.low) & (d$LogReactionTime < cutoff.high))
+
+hist(df.outliers.removed$LogReactionTime, col="lightblue", xlab="LogReactionTime (ms)",
+        main="Histogram with Normal Curve")
+
+```
+
+# ReactionTime by Accuracy
+
+```{r}
+agr = df.outliers.removed %>%
+    group_by(Task,LogReactionTime) %>%
+    summarize(MeanAccuracy = mean(Accuracy) )
+
+
+ggplot(agr, aes(x = MeanAccuracy, y = LogReactionTime, fill = MeanAccuracy)) +
+  geom_boxplot(alpha = 0.7) + # Boxplot
+  geom_jitter(position = position_jitter(0.2), color = "black", size = 1.5, alpha = 0.5) + # Add jittered points
+  facet_wrap(~Task) +
+  labs(title = "Reaction Time by Accuracy",
+       x = "Accuracy",
+       y = "Reaction Time (ms)") +
+  theme_minimal() +
+  theme(legend.position = "none") # Remove legend
+
+```
+
+```{r}
+ggplot(df.outliers.removed, aes(x = Accuracy, y = LogReactionTime, fill = Task)) +
+  geom_violin(alpha = 0.7) + # Violin plot
+  geom_jitter(position = position_jitter(0.2), color = "black", size = 1.5, alpha = 0.5) + # Add jittered points
+  labs(title = "Reaction Time by Accuracy",
+       x = "Accuracy",
+       y = "Reaction Time (ms)")
+  # theme_minimal() +
+  # theme(legend.position = "none") # Remove legend
+```
+
+# Accuracy
+
+
+## Overall Accuracy
+```{r}
+agr <- df.outliers.removed %>% 
+  group_by(Task) %>% 
+  reframe(MeanAccuracy = mean(Accuracy), 
+          CILow = ci.low(Accuracy), 
+          CIHigh = ci.high(Accuracy)) %>%
+  mutate(YMin = MeanAccuracy - CILow, 
+         YMax = MeanAccuracy + CIHigh)
+# View(agr)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Task,y=MeanAccuracy,fill=Task)) +
+  geom_bar(position=dodge,stat="identity") + 
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9))
+
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  # guides(fill = "none")
+
+```
+
+## Mean Accuracy by Word / Task
+```{r,fig.width=10, fig.height=5}
+agr <- df.outliers.removed %>%
+  # filter(PennElementType == "Selector") %>% 
+  # select(ID.true,Word,Accuracy) %>% 
+  group_by(Task,Word) %>% 
+  mutate(MeanAccuracy = mean(Accuracy), 
+          CILow = ci.low(Accuracy), 
+          CIHigh = ci.high(Accuracy)) %>%
+  mutate(YMin = MeanAccuracy - CILow, 
+         YMax = MeanAccuracy + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Word,y=MeanAccuracy,fill=Task)) +
+  geom_bar(position=dodge,stat="identity") +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  guides(fill = "none")
+
+# View(d[(d$ID.true == c("56cc78e3ccc0e20006b82a7d")) & (d$Word == c("envy")),])
+```
+
+## Mean Accuracy by Word / Block Order
+Participants performed better when Concreteness task came first
+```{r,fig.width=10, fig.height=5}
+agr <- df.outliers.removed %>%
+  # filter(PennElementType == "Selector") %>% 
+  # select(ID.true,Word,Accuracy) %>% 
+  group_by(BlockOrder,Word) %>% 
+  mutate(MeanAccuracy = mean(Accuracy), 
+          CILow = ci.low(Accuracy), 
+          CIHigh = ci.high(Accuracy)) %>%
+  mutate(YMin = MeanAccuracy - CILow, 
+         YMax = MeanAccuracy + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Word,y=MeanAccuracy,fill=BlockOrder)) +
+  geom_bar(position=dodge,stat="identity") +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  # guides(fill = "none")
+
+# View(d[(d$ID.true == c("56cc78e3ccc0e20006b82a7d")) & (d$Word == c("envy")),])
+```
+
+## Mean Accuracy by Word / Block Order / Task
+Participants performed better when Concreteness task came first
+```{r,fig.width=10, fig.height=15}
+agr <- df.outliers.removed %>%
+  group_by(BlockOrder,Task,Word) %>% 
+  mutate(MeanAccuracy = mean(Accuracy), 
+          CILow = ci.low(Accuracy), 
+          CIHigh = ci.high(Accuracy)) %>%
+  mutate(YMin = MeanAccuracy - CILow, 
+         YMax = MeanAccuracy + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Task,y=MeanAccuracy,fill=BlockOrder)) +
+  geom_bar(position=dodge,stat="identity") +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  facet_wrap(~Word,ncol=5)
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  # guides(fill = "none")
+
+# View(d[(d$ID.true == c("56cc78e3ccc0e20006b82a7d")) & (d$Word == c("envy")),])
+```
+
+
+
+# LogReactionTime by Task
+
+```{r}
+
+agr = df.outliers.removed %>%
+    group_by(Task,Word) %>%
+    summarize(MeanLogReactionTime = mean(LogReactionTime), 
+              CILow = ci.low(LogReactionTime), 
+              CIHigh = ci.high(LogReactionTime)) %>%
+    mutate(YMin = MeanLogReactionTime - CILow, 
+           YMax = MeanLogReactionTime + CIHigh)
+
+ggplot(agr, aes(x=MeanLogReactionTime, fill=Task)) +
+  geom_density(alpha = .4)
+
+ggplot(agr, aes(x=Task, y=MeanLogReactionTime,fill=Task)) + 
+    geom_violin(trim=FALSE,alpha=.4) +
+    geom_jitter(shape=16, position=position_jitter(0.2)) +
+    # geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position="dodge", show.legend = FALSE) +
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  guides(fill = "none")
+
+```
+
+# ReactionTime by Task
+```{r}
+
+agr = df.outliers.removed %>%
+    group_by(Task,Word) %>%
+    summarize(MeanReactionTime = mean(ReactionTime), 
+              CILow = ci.low(ReactionTime), 
+              CIHigh = ci.high(ReactionTime)) %>%
+    mutate(YMin = MeanReactionTime - CILow, 
+           YMax = MeanReactionTime + CIHigh)
+
+ggplot(agr, aes(x=MeanReactionTime, fill=Task)) +
+  geom_density(alpha = .4)
+
+ggplot(agr, aes(x=Task, y=MeanReactionTime,fill=Task)) + 
+    geom_violin(trim=FALSE,alpha=.4) +
+    geom_jitter(shape=16, position=position_jitter(0.2)) +
+    # geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position="dodge", show.legend = FALSE) +
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  guides(fill = "none")
+
+```
+
+# LogReactionTime by BlockOrder and Task
+```{r}
+
+agr = df.outliers.removed %>%
+    group_by(BlockOrder,Task,Word) %>%
+    summarize(MeanLogReactionTime = mean(LogReactionTime), 
+              CILow = ci.low(LogReactionTime), 
+              CIHigh = ci.high(LogReactionTime)) %>%
+    mutate(YMin = MeanLogReactionTime - CILow, 
+           YMax = MeanLogReactionTime + CIHigh)
+
+ggplot(agr, aes(x=MeanLogReactionTime, fill=Task)) +
+  geom_density(alpha = .4)
+
+ggplot(agr, aes(x=MeanLogReactionTime, fill=Task)) +
+  facet_wrap(~BlockOrder) +
+  geom_density(alpha = .4)
+
+ggplot(agr, aes(x=Task, y=MeanLogReactionTime,fill=BlockOrder)) + 
+    geom_violin(trim=FALSE,alpha=.4) +
+    geom_jitter(shape=16, position=position_jitter(0.2))
+
+```
+
+# ReactionTime by BlockOrder and Task
+```{r}
+
+agr = df.outliers.removed %>%
+    group_by(BlockOrder,Task,Word) %>%
+    summarize(MeanReactionTime = mean(ReactionTime), 
+              CILow = ci.low(ReactionTime), 
+              CIHigh = ci.high(ReactionTime)) %>%
+    mutate(YMin = MeanReactionTime - CILow, 
+           YMax = MeanReactionTime + CIHigh)
+
+ggplot(agr, aes(x=MeanReactionTime, fill=Task)) +
+  geom_density(alpha = .4)
+
+ggplot(agr, aes(x=MeanReactionTime, fill=Task)) +
+  facet_wrap(~BlockOrder) +
+  geom_density(alpha = .4)
+
+ggplot(agr, aes(x=Task, y=MeanReactionTime,fill=BlockOrder)) + 
+    geom_violin(trim=FALSE,alpha=.4) +
+    geom_jitter(shape=16, position=position_jitter(0.2))
+
+```
+
+
+# By Item
+
+```{r,fig.width=10, fig.height=5}
+agr = df.outliers.removed %>%
+    group_by(Task,Word) %>%
+    summarize(MeanReactionTime = mean(ReactionTime), CILow = ci.low(ReactionTime), CIHigh = ci.high(ReactionTime)) %>%
+    mutate(YMin = MeanReactionTime - CILow, YMax = MeanReactionTime + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Word,y=MeanReactionTime,fill=Task)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Task) +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  # guides(fill = "none")
+```
+
+```{r,fig.width=10, fig.height=15}
+agr = df.outliers.removed %>%
+    group_by(BlockOrder,Task,Word) %>%
+    summarize(MeanReactionTime = mean(ReactionTime), CILow = ci.low(ReactionTime), CIHigh = ci.high(ReactionTime)) %>%
+    mutate(YMin = MeanReactionTime - CILow, YMax = MeanReactionTime + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Task,y=MeanReactionTime,fill=BlockOrder)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~Word) +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  # guides(fill = "none")
+```
+
+
+## By ConcValCombo category and Task
+
+### Mean Raw ReactionTime and Effects of Word Valence/Concreteness
+
+```{r}
+
+agr = df.outliers.removed %>%
+    group_by(Task,ConcValCombo) %>%
+    reframe(MeanReactionTime = mean(ReactionTime), CILow = ci.low(ReactionTime), CIHigh = ci.high(ReactionTime)) %>%
+    mutate(YMin = MeanReactionTime - CILow, YMax = MeanReactionTime + CIHigh)
+
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Task,y=MeanReactionTime,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Task) +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  # guides(fill = "none")
+
+
+```
+
+### Mean Raw ReactionTime and Effects of Word Valence/Concreteness
+
+```{r}
+
+agr = df.outliers.removed %>%
+    group_by(BlockOrder,Task,ConcValCombo) %>%
+    reframe(MeanReactionTime = mean(ReactionTime), CILow = ci.low(ReactionTime), CIHigh = ci.high(ReactionTime)) %>%
+    mutate(YMin = MeanReactionTime - CILow, YMax = MeanReactionTime + CIHigh)
+
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Task,y=MeanReactionTime,fill=BlockOrder)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~ConcValCombo) +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  # guides(fill = "none")
+
+
+```

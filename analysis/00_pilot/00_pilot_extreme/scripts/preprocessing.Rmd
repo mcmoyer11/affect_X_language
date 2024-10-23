@@ -1,5 +1,5 @@
 ---
-title: 'affect proj pilot: preprocessing'
+title: 'affect proj pilot2 (extreme words): preprocessing'
 author: "morgan moyer"
 date: "`r Sys.Date()`"
 output: html_document
@@ -61,19 +61,7 @@ vc <- read.pcibex("../data/results_vc.csv")
 cv["BlockOrder"] <- "CV"
 vc["BlockOrder"] <- "VC"
 d <- rbind(cv,vc)
-
-```
-
-
-```{r}
-
-
-# sanity check
-nrow(cv) + nrow(vc) == nrow(d)
-
-d$ID = as.factor(d$ID)
-length(unique(d$ID)) # 65
-
+unique(d$Label)
 ```
 
 
@@ -110,32 +98,30 @@ d.IDs <- d %>% select(MD5.hash.of.participant.s.IP.address,ID,Value,Parameter,Pe
 
 d <- d %>%  merge(., d.IDs, by = c("MD5.hash.of.participant.s.IP.address"))
 
+# Separate out the training items
+d.train <- d %>% 
+  filter(Label %in% c("calibrator_val","calibrator_conc"))
 
 # get the relevant conc and val info for each word
+# This code will automativally remove the training items so have to separate them
+# before running this code
 d.labels.test <- read.csv("../data/weighted_extreme_facts.csv")[,c("Word","ConcValCombo_moderate")] %>% 
   rename(ConcValCombo = ConcValCombo_moderate) %>% 
   distinct(Word, .keep_all=TRUE)
 
 d <- inner_join(d, d.labels.test, by = "Word")
-# View(d)
 
 # Add a Response column# Add a Response column
 # d$Response <- d$Value[d$Parameter=="Selection"]
 d$Response <- ""
 d$Response <- ifelse(d$Parameter == "Selection", d$Value, d$Response)
 
-# Add RT measure Column
+# Add RT measure Column >>> How is this different from the REactionTime column from the code?
 results <- d %>%
-  filter((Label %in% c("test_val", "test_conc")) & (Parameter == "Selection" | Value == "Start")) %>%
+  filter( Parameter == "Selection" | Value == "Start") %>%
   group_by(ID.true,Word) %>%
   summarise( RT = mean(EventTime[Parameter=="Selection"] - EventTime[Value=="Start"]) , N = length(Value)/2 ) %>% 
   select(-c("N"))
-
-ggplot(results, aes(RT)) +
-  geom_density(alpha = .5)
-
-ggplot(d, aes(EventTime)) +
-  geom_density(alpha = .5)
 
 # Combine together
 d <- inner_join(d,results, by = c("ID.true","Word") )
@@ -156,7 +142,6 @@ d$Task <- ifelse(d$Label == "test_val", "Valence",
 table(d$Task,d$Label)
 
 table(d$BlockOrder,d$Task)
-
 ```
 
 # Remove the participants from the cv block with the bad code
@@ -182,6 +167,99 @@ table(d$Task,d$Label)
 table(d$BlockOrder,d$Task,d$Label)
 ```
 
+
+```{r}
+d <- d %>% 
+    filter(Parameter == "Selection") %>%
+    select(ID.true,Word,Label,ConcValCombo,Task,BlockOrder,Group,Response,Accuracy,EventTime,Value,RT,ReactionTime,Key_value_F,Key_value_J,Comments) %>% 
+  distinct()
+
+# View(d)
+d$ReactionTime <- as.numeric(d$ReactionTime)
+d$LogReactionTime <- log(d$ReactionTime)
+d$RT <- as.numeric(d$RT)
+d$LogRT <- log(d$RT)
+
+
+# Add triual number
+d <- d %>% 
+    group_by(ID.true) %>%           # Group by ID.true
+    mutate(TrialNumber = row_number()) %>%   # Create TrialNumber as the row number within each group
+    ungroup()  # Ungroup the data to remove the group structure
+
+```
+
+# Write to .csv
+```{r}
+# write.csv(d,"../data/processed.csv")
+
+```
+
+# training items to csv
+
+```{r}
+
+# Add Task column
+d.train$Task <- ifelse(d.train$Label == "calibrator_val", "Valence", 
+                 ifelse(d.train$Label == "calibrator_conc", "Concrete", "Na"))
+length(unique(d.train$ID.true))
+# Remove rows from `df` where ID.true matches any ID in filtered_ids
+d.train <- d.train %>%
+  anti_join(filtered_ids, by = "ID.true")
+
+length(unique(d.train$ID.true)) # 40 left
+
+d.train <- d.train %>% 
+    filter(Parameter == "Selection") %>%
+    select(ID.true,Word,Label,Task,BlockOrder,EventTime,Value,ReactionTime, Key_value_F,Key_value_J,Comments,Group) %>% 
+  distinct()
+
+nrow(d.train)
+
+
+names(d.train)
+d.train$ReactionTime <- as.numeric(d.train$ReactionTime)
+d.train$LogReactionTime <- log(d.train$ReactionTime)
+
+# Add triual number
+d.train <- d.train %>% 
+    group_by(ID.true) %>%           # Group by ID.true
+    mutate(TrialNumber = row_number()) %>%   # Create TrialNumber as the row number within each group
+    ungroup()  # Ungroup the data to remove the group structure
+
+# write.csv(d.train,"../data/processed_training.csv")
+
+```
+
+
+
+
+```{r, eval=FALSE,echo=FALSE}
+ggplot(results, aes(RT)) +
+  geom_density(alpha = .5)
+
+ggplot(d, aes(EventTime)) +
+  geom_density(alpha = .5)
+
+ggplot(d, aes(ReactionTime)) +
+  geom_density(alpha = .5)
+```
+
+
+
+
+# text_conc code : is the label for the choices correct?
+```{r}
+test.conc <- d %>% 
+  filter(Label=="test_conc")
+
+View(test.conc)
+
+table(test.conc$Key_value_F,test.conc$Group,test.conc$BlockOrder)
+
+```
+
+
 ```{r}
 
 test <- d %>% 
@@ -202,7 +280,8 @@ part <- d %>%
 table(part$Label,part$Word)
 
 part.val <- part %>% 
-  filter(Label == "test_val")
+  filter(Label == "test_val") %>% 
+  group_by(Word)
 
 
 View(part.val)
@@ -222,56 +301,6 @@ ggplot(part.val, aes(ReactionTime)) +
   geom_density(alpha = .5)
 
 ```
-
-```{r}
-d$ReactionTime <- as.numeric(d$ReactionTime)
-d$LogReactionTime <- log(d$ReactionTime)
-
-
-agr = d %>%
-    group_by(Task,Word) %>%
-    summarize(MeanLogReactionTime = mean(LogReactionTime), 
-              CILow = ci.low(LogReactionTime), 
-              CIHigh = ci.high(LogReactionTime)) %>%
-    mutate(YMin = MeanLogReactionTime - CILow, 
-           YMax = MeanLogReactionTime + CIHigh)
-
-ggplot(agr, aes(x=MeanLogReactionTime, fill=Task)) +
-  geom_density(alpha = .4)
-
-ggplot(agr, aes(x=Task, y=MeanLogReactionTime,fill=Task)) + 
-    geom_violin(trim=FALSE,alpha=.4) +
-    geom_jitter(shape=16, position=position_jitter(0.2)) +
-    # geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position="dodge", show.legend = FALSE) +
-  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  guides(fill = "none")
-```
-
-```{r}
-
-d$LogRT <- log(d$RT)
-agr = d %>%
-    group_by(Task,Word) %>%
-    summarize(MeanLogRT = mean(LogRT), 
-              CILow = ci.low(LogRT), 
-              CIHigh = ci.high(LogRT)) %>%
-    mutate(YMin = MeanLogRT - CILow, 
-           YMax = MeanLogRT + CIHigh)
-
-ggplot(agr, aes(x=MeanLogRT, fill=Task)) +
-  geom_density(alpha = .4)
-
-ggplot(agr, aes(x=Task, y=MeanLogRT,fill=Task)) + 
-    geom_violin(trim=FALSE,alpha=.4) +
-    geom_jitter(shape=16, position=position_jitter(0.2)) +
-    # geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position="dodge", show.legend = FALSE) +
-  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  guides(fill = "none")
-```
-
-
-
-
 
 
 
@@ -325,16 +354,6 @@ ggplot(data=agr, aes(x=Word,y=MeanAccuracy, fill=Task)) +
 
 
 
-```{r}
-d <- d %>% 
-    filter(Parameter == "Selection") %>%
-    select(ID.true,Word,Label,ConcValCombo,Task,BlockOrder,Response,Accuracy,EventTime,Value,RT) %>% 
-  distinct()
-
-# View(d)
-d$LogRT <- log(d$RT)
-
-```
 
 # Double check things are ok with Task
 
@@ -357,11 +376,59 @@ ggplot(d, aes(x=LogRT, fill=Task)) +
 ```
 
 
-
-# Write to .csv
+# Compare the RT and ReactionTime columns
 ```{r}
-# write.csv(d,"../data/processed.csv")
+
+
+agr.rt1 = d %>%
+    group_by(Task,Word) %>%
+    summarize(MeanLogReactionTime = mean(LogReactionTime), 
+              CILow = ci.low(LogReactionTime), 
+              CIHigh = ci.high(LogReactionTime)) %>%
+    mutate(YMin = MeanLogReactionTime - CILow, 
+           YMax = MeanLogReactionTime + CIHigh)
+
+agr.rt2 = d %>%
+    group_by(Task,Word) %>%
+    summarize(MeanLogRT = mean(LogRT), 
+              CILow = ci.low(LogRT), 
+              CIHigh = ci.high(LogRT)) %>%
+    mutate(YMin = MeanLogRT - CILow, 
+           YMax = MeanLogRT + CIHigh)
 
 ```
+
+```{r}
+
+
+ggplot(agr.rt1, aes(x=MeanLogReactionTime, fill=Task)) +
+  geom_density(alpha = .4)
+
+ggplot(agr.rt2, aes(x=MeanLogRT, fill=Task)) +
+  geom_density(alpha = .4)
+```
+
+
+```{r}
+
+ggplot(agr.rt1, aes(x=Task, y=MeanLogReactionTime,fill=Task)) + 
+    geom_violin(trim=FALSE,alpha=.4) +
+    geom_jitter(shape=16, position=position_jitter(0.2)) +
+    # geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position="dodge", show.legend = FALSE) +
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  guides(fill = "none")
+
+
+ggplot(agr.rt2, aes(x=Task, y=MeanLogRT,fill=Task)) + 
+    geom_violin(trim=FALSE,alpha=.4) +
+    geom_jitter(shape=16, position=position_jitter(0.2)) +
+    # geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position="dodge", show.legend = FALSE) +
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  guides(fill = "none")
+```
+
+
+
+
 
 
