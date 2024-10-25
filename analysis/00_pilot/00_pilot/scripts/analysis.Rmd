@@ -20,11 +20,10 @@ cbPalette <- c("#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#
 this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
 setwd(this.dir)
 source("../../../helpers.R")
-```
 
-```{r}
 d <- read.csv("../data/processed.csv")
 d$LogRT <- log(d$RT)
+d$LogReactionTime <- log(d$ReactionTime)
 names(d)
 ```
 
@@ -43,7 +42,7 @@ convert_except <- function(df, exclude_cols) {
   return(df)
 }
 # Specify columns to exclude from conversion
-exclude_columns <- c('RT', 'LogRT')
+exclude_columns <- c('RT', 'LogRT','LogReactionTime','ReactionTime')
 
 # Convert all columns to factors except for 'a' and 'd'
 df_factors <- convert_except(d, exclude_columns)
@@ -52,6 +51,12 @@ df_factors <- convert_except(d, exclude_columns)
 str(df_factors)
 
 ```
+
+```{r}
+ggplot(df.outliers.removed, aes(x=LogReactionTime, fill=Task)) +
+  geom_density(alpha = .4)
+```
+
 
 ```{r, include=FALSE, warning=FALSE, echo=FALSE}
 contrasts(df_factors$ConcValCombo)
@@ -70,6 +75,16 @@ Yes.
 ```{r}
 
 m = lmer(LogRT ~ cTask + (1|ID.true) + (1+cTask|Word), data=center)
+# saveRDS(m.ms.ma.full, "../models/model-task-para.rds")
+
+# m <- readRDS("../models/m.rds")
+summary(m)
+```
+
+```{r}
+center$LogReactionTime = as.numeric(center$LogReactionTime)
+
+m = lmer(LogReactionTime ~ cTask + (1|ID.true) + (1+cTask|Word), data=center)
 # saveRDS(m.ms.ma.full, "../models/model-task-para.rds")
 
 # m <- readRDS("../models/m.rds")
