@@ -1,0 +1,580 @@
+---
+title: "Switch Cost"
+author: "morgan moyer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(multcomp) # not available for this version of R
+library(stringr)
+library(textstem)
+library(tidyverse)
+library(kableExtra)
+theme_set(theme_bw())
+cbPalette <- c("#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73")
+this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(this.dir)
+source("../../../helpers.R")
+
+p <- read.csv("../data/p1-p4.csv")
+p$Accuracy <- NULL
+colnames(p)[colnames(p) == "AccuracyBest"] <- "Accuracy"
+
+ls <- read.csv("../data/p3_list_subs.csv")
+# Replace ConcValCombo in d for matching Words in corrected_words
+
+# Ensure the key column 'ID.true' exists in both dataframes
+if ("ID.true" %in% names(p) && "ID.true" %in% names(ls)) {
+  # Replace `WhoseList` in df where Version == "Pilot3"
+  p$WhoseList[p$Version == "Pilot3"] <- ls$WhoseList[
+    match(p$ID.true[p$Version == "Pilot3"], ls$ID.true)
+  ]
+} else {
+  stop("ID.true column not found in one of the dataframes.")
+}
+
+table(p$WhoseList)
+
+p5 <- read.csv("../data/processed.csv")
+p5["Version"] <- "Pilot5"
+p5["WhoseList"] <- "Combined3"
+
+d <- bind_rows(p,p5)
+
+unique(d$Version)
+word_features <- unique(d[,c("Word","ConcValCombo")])
+nrow(word_features)
+```
+
+
+```{r}
+
+ggplot(d, aes(x=LogReactionTime)) +
+  geom_histogram(binwidth = .1,fill = "lightblue", color = "black") +
+  facet_wrap(~Task)
+
+ggplot(d, aes(x=LogReactionTime, fill=Task)) +
+  geom_density(alpha = .4)
+
+```
+
+
+# First make the pairs, then remove non-accurate trials
+otherwise, might not be getting the right order
+```{r}
+d <- d %>%
+  # filter(Accuracy == 1) %>% 
+  mutate(UniqueTrial = paste(ID.true,Task,WhoseList,sep="-")) %>% 
+  separate(
+    ConcValCombo,            # Column to split
+    into = c("ConcreteValue", "ValenceValue"),  # New column names
+    sep = "-"                # Separator to split at
+  )
+```
+
+
+```{r}
+# Process the data
+# Process the data
+output <- d %>%
+  group_by(UniqueTrial) %>%
+  mutate(
+    # Create WordPair using Word column values of consecutive rows
+    WordPair = paste0(Word, "-", lead(Word)),
+    # Determine SwitchCostVal by comparing ValenceValue with the next row
+    SwitchCostVal = case_when(
+      ValenceValue == lead(ValenceValue) ~ "NoSwitch",
+      ValenceValue != lead(ValenceValue) ~ "Switch",
+      TRUE ~ NA_character_  # Handle edge cases
+    ),
+    # Determine SwitchCostConc by comparing ConcreteValue with the next row
+    SwitchCostConc = case_when(
+      ConcreteValue == lead(ConcreteValue) ~ "NoSwitch",
+      ConcreteValue != lead(ConcreteValue) ~ "Switch",
+      TRUE ~ NA_character_  # Handle edge cases
+    ),
+    # FirstWordRT is the ReactionTime of the current row
+    FirstWordLogRT = LogReactionTime,
+    # SecondWordRT is the ReactionTime of the next row
+    SecondWordLogRT = lead(LogReactionTime),
+    # FirstWordRT is the ReactionTime of the current row
+    FirstWordRT = ReactionTime,
+    # SecondWordRT is the ReactionTime of the next row
+    SecondWordRT = lead(ReactionTime),
+    # FirstWordRT is the ReactionTime of the current row
+    FirstWordAccuracy = Accuracy,
+    # SecondWordRT is the ReactionTime of the next row
+    SecondWordAccuracy = lead(Accuracy),
+    # create the combo column
+    SwitchCombo = paste(SwitchCostConc,SwitchCostVal,sep='-'),
+    RT_Difference = SecondWordLogRT - FirstWordLogRT                     # Calculate the difference between RTs
+  ) %>%
+  # Remove rows without valid pairings (e.g., last row in each UniqueTrial group)
+  filter(!is.na(lead(Word))) %>%
+  ungroup() 
+# %>%
+  # select(UniqueTrial, ConcreteValue, ValenceValue, WordPair, SwitchCostVal, SwitchCostConc)
+
+
+# Print the resulting dataframe
+table(output$SwitchCostVal)
+
+table(output$SwitchCostConc)
+
+table(output$SwitchCostConc,output$SwitchCostVal)
+
+table(output$FirstWordAccuracy,output$SecondWordAccuracy)
+
+```
+
+# Filter out inaccurate trials
+```{r}
+output_acc <- output %>% 
+  filter((FirstWordAccuracy == 1) & (SecondWordAccuracy == 1))
+
+nrow(output_acc)/nrow(output)*100
+
+```
+
+# Remove outliers
+```{r}
+# Remove subjects with ReactionTime higher than 3x IQR
+summary(output_acc$SecondWordRT)
+range(output_acc$SecondWordRT)
+
+hist(output_acc$SecondWordLogRT, breaks=100, col="lightblue", xlab="SecondWordLogRT (ms)",
+        main="Histogram with Normal Curve")
+
+quantile(output_acc$SecondWordLogRT, na.rm = TRUE)
+# Check for missing or NaN values
+sum(is.na(output_acc$SecondWordLogRT)) # Count of NA values
+sum(is.nan(output_acc$SecondWordLogRT)) # Count of NaN values
+
+
+
+IQR(output_acc$SecondWordLogRT, na.rm = TRUE)*3 # 0.7526289
+cutoff.high <- quantile(output_acc$SecondWordLogRT, na.rm = TRUE)[4] + IQR(output_acc$SecondWordLogRT, na.rm = TRUE)*3 # 8.419261
+cutoff.low <- quantile(output_acc$SecondWordLogRT, na.rm = TRUE)[2] - IQR(output_acc$SecondWordLogRT, na.rm = TRUE)*3# 6.5088838.419261
+
+
+# remove subjects with ReactionTime higher than 3 x IQR
+df.outliers.removed <- subset(output_acc, (output_acc$SecondWordLogRT > cutoff.low) & (output_acc$SecondWordLogRT < cutoff.high))
+
+hist(df.outliers.removed$SecondWordLogRT, col="lightblue", xlab="SecondWordLogRT (ms)",
+        main="Histogram with Normal Curve")
+
+
+```
+
+```{r}
+
+agr <- df.outliers.removed %>% 
+  group_by(WordPair,SwitchCombo) %>% 
+  mutate(MeanSecondWordLogRT = mean(SecondWordLogRT))
+
+ggplot(df.outliers.removed, aes(SecondWordLogRT, fill=SwitchCombo)) +
+  geom_density(alpha = .5)
+
+
+agr <- df.outliers.removed %>% 
+  group_by(WordPair,Task,SwitchCombo) %>% 
+  summarize(MeanSecondWordLogRT = mean(SecondWordLogRT))
+
+ggplot(agr, aes(MeanSecondWordLogRT, fill=SwitchCombo)) +
+  geom_density(alpha = .5) +
+  facet_wrap(~Task)
+  
+```
+
+# Plot the difference between First and Second Word RT as a function of SwitchCombo
+```{r}
+# Plot the RT difference as a function of SwitchCombo
+ggplot(df.outliers.removed, aes(x = SwitchCombo, y = SecondWordLogRT)) +
+  geom_boxplot(fill = "lightblue", color = "darkblue", outlier.color = "red") +
+  geom_jitter(width = 0.2, alpha = 0.6) +
+  facet_wrap(~Task) +
+  labs(
+    title = "RT Difference by Switch Combo",
+    x = "Switch Combo (Valence-Concreteness)",
+    y = "RT Difference (ms)"
+  )
+  # theme_minimal() +
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+# Plot the RT difference as a function of SwitchCombo using a violin plot
+ggplot(df.outliers.removed, aes(x = SwitchCombo, y = SecondWordLogRT, fill=Task)) +
+  geom_violin(fill = "lightblue", color = "darkblue", trim = FALSE) +
+  geom_jitter(width = 0.2, alpha = 0.6) +
+  facet_wrap(~Task) +
+  labs(
+    title = "RT Difference by Switch Combo",
+    x = "Switch Combo (Valence-Concreteness)",
+    y = "Log RT for second word"
+  )
+```
+
+
+First feature is Concreteness, second is Valence
+
+```{r}
+agr <- df.outliers.removed %>%
+    group_by(Task,SwitchCombo,WhoseList) %>%
+    summarize(MeanSecondWordLogRT = mean(SecondWordLogRT), 
+              CILow = ci.low(SecondWordLogRT), 
+              CIHigh = ci.high(SecondWordLogRT)) %>%
+    mutate(YMin = MeanSecondWordLogRT - CILow, 
+           YMax = MeanSecondWordLogRT + CIHigh)
+
+
+ggplot(agr, aes(x=Task, y=MeanSecondWordLogRT,fill=SwitchCombo)) + 
+    geom_violin(trim=FALSE,alpha=.4) +
+    geom_jitter(shape=16, position=position_jitter(0.2))
+  # guides(fill = "none")
+
+ggplot(agr, aes(x=SwitchCombo, y=MeanSecondWordLogRT,fill=Task)) + 
+    geom_violin(trim=FALSE,alpha=.4) +
+    geom_jitter(shape=16, position=position_jitter(0.2))
+
+```
+
+
+```{r}
+agr <- df.outliers.removed %>%
+    group_by(Task,SwitchCombo,WhoseList) %>%
+    summarize(MeanSecondWordRT = mean(SecondWordRT), 
+              CILow = ci.low(SecondWordRT), 
+              CIHigh = ci.high(SecondWordRT)) %>%
+    mutate(YMin = MeanSecondWordRT - CILow, 
+           YMax = MeanSecondWordRT + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Task,y=MeanSecondWordRT,fill=SwitchCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~WhoseList) +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9))
+```
+
+## Look at the individual features
+```{r}
+# Extract the first and second words from WordPair in df.outliers.removed
+df.outliers.removed$FirstWord <- sub("-.*", "", df.outliers.removed$WordPair) # Part before '-'
+df.outliers.removed$SecondWord <- sub(".*-", "", df.outliers.removed$WordPair) # Part after '-'
+
+# Match with word_features and create new columns
+df.outliers.removed$FirstWordCVC <- word_features$ConcValCombo[
+  match(df.outliers.removed$FirstWord, word_features$Word)
+]
+
+df.outliers.removed$SecondWordCVC <- word_features$ConcValCombo[
+  match(df.outliers.removed$SecondWord, word_features$Word)
+]
+
+```
+
+
+```{r}
+# Subset data to all columns after (and including) "UniqueTrial"
+df <- df.outliers.removed[, which(names(df.outliers.removed) == "UniqueTrial"):ncol(df.outliers.removed)]
+
+# Split df$UniqueTrial into three new columns, keeping UniqueTrial
+df <- df %>%
+  separate(UniqueTrial, into = c("ID.true", "Task", "WhoseList"), sep = "-", remove = FALSE)
+
+```
+
+# Overall
+- Valence is always faster
+
+```{r,fig.width=10, fig.height=10}
+
+agr <- df %>% 
+  # filter(Task == "Valence") %>% 
+  group_by(Task,SwitchCombo,FirstWordCVC,SecondWordCVC) %>% 
+  summarize(MeanSecondWordRT = mean(SecondWordRT), 
+          CILow = ci.low(SecondWordRT), 
+          CIHigh = ci.high(SecondWordRT)) %>%
+  mutate(YMin = MeanSecondWordRT - CILow, 
+       YMax = MeanSecondWordRT + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=SecondWordCVC,y=MeanSecondWordRT,fill=FirstWordCVC)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~SwitchCombo) +
+  # facet_grid(FirstWordCVC~SecondWordCVC) +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9))
+
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Task,y=MeanSecondWordRT,fill=SwitchCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_grid(FirstWordCVC~SecondWordCVC) +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  labs(
+    # title = "Facet Grid Example",
+    x = "Columns = Second Word ConcValCombo", 
+    y = "Row = First Word ConcValCombo"
+  )
+
+```
+
+
+
+# Valence first
+
+- When nothing switches (top left): abs/pos and conc/neg are fastest
+- When only Valence switches (top right): maybe slower going neg --> pos
+- When only Conc switch (bottom left): maybe cost for conc --> abs, only for negative words
+- When both switch (bottom right): costliest going conc/pos --> abs/neg; least for abs/pos --> conc/neg
+```{r}
+
+agr <- df %>% 
+  filter(Task == "Valence") %>% 
+  group_by(SwitchCombo,FirstWordCVC,SecondWordCVC) %>% 
+  summarize(MeanSecondWordRT = mean(SecondWordRT), 
+          CILow = ci.low(SecondWordRT), 
+          CIHigh = ci.high(SecondWordRT)) %>%
+  mutate(YMin = MeanSecondWordRT - CILow, 
+       YMax = MeanSecondWordRT + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=SecondWordCVC,y=MeanSecondWordRT,fill=FirstWordCVC)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~SwitchCombo) +
+  # facet_grid(FirstWordCVC~SecondWordCVC) +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9))
+
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=SwitchCombo,y=MeanSecondWordRT,fill=FirstWordCVC)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~SecondWordCVC) +
+  # facet_grid(FirstWordCVC~SecondWordCVC) +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9))
+
+```
+
+## Raw RT
+```{r}
+
+agr <- df %>% 
+  filter(Task == "Valence") %>% 
+  group_by(WhoseList,SwitchCombo,FirstWordCVC,SecondWordCVC) %>% 
+  summarize(MeanSecondWordRT = mean(SecondWordRT), 
+          CILow = ci.low(SecondWordRT), 
+          CIHigh = ci.high(SecondWordRT)) %>%
+  mutate(YMin = MeanSecondWordRT - CILow, 
+       YMax = MeanSecondWordRT + CIHigh)
+
+ggplot(agr, aes(x=FirstWordCVC, y=MeanSecondWordRT,fill=SecondWordCVC)) + 
+  geom_violin(trim=FALSE,alpha=.4) +
+  geom_jitter(shape=16, position=position_jitter(0.2)) +
+  facet_wrap(~SwitchCombo)
+
+```
+
+## LogRT
+
+```{r}
+
+agr <- df %>% 
+  filter(Task == "Valence") %>% 
+  group_by(WhoseList,SwitchCombo,FirstWordCVC,SecondWordCVC) %>% 
+  summarize(MeanSecondWordLogRT = mean(SecondWordLogRT), 
+          CILow = ci.low(SecondWordLogRT), 
+          CIHigh = ci.high(SecondWordLogRT)) %>%
+  mutate(YMin = MeanSecondWordLogRT - CILow, 
+       YMax = MeanSecondWordLogRT + CIHigh)
+
+ggplot(agr, aes(x=FirstWordCVC, y=MeanSecondWordLogRT,fill=SecondWordCVC)) + 
+  geom_violin(trim=FALSE,alpha=.4) +
+  geom_jitter(shape=16, position=position_jitter(0.2)) +
+  facet_wrap(~SwitchCombo)
+
+```
+
+# Concreteness
+
+- When nothing changes (top left): speed up in concreteness compared to abstract
+- When only valence changes (top right), no effect
+- When Conc changes (bottom left), again, cost for abs
+- When both change, cost for abstract
+```{r}
+
+agr <- df %>% 
+  filter(Task == "Concrete") %>% 
+  group_by(SwitchCombo,FirstWordCVC,SecondWordCVC) %>% 
+  summarize(MeanSecondWordRT = mean(SecondWordRT), 
+          CILow = ci.low(SecondWordRT), 
+          CIHigh = ci.high(SecondWordRT)) %>%
+  mutate(YMin = MeanSecondWordRT - CILow, 
+       YMax = MeanSecondWordRT + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=SecondWordCVC,y=MeanSecondWordRT,fill=FirstWordCVC)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~SwitchCombo) +
+  # facet_grid(FirstWordCVC~SecondWordCVC) +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9))
+
+```
+
+## Raw RT
+```{r}
+
+agr <- df %>% 
+  filter(Task == "Concrete") %>% 
+  group_by(WhoseList,SwitchCombo,FirstWordCVC,SecondWordCVC) %>% 
+  summarize(MeanSecondWordRT = mean(SecondWordRT), 
+          CILow = ci.low(SecondWordRT), 
+          CIHigh = ci.high(SecondWordRT)) %>%
+  mutate(YMin = MeanSecondWordRT - CILow, 
+       YMax = MeanSecondWordRT + CIHigh)
+
+ggplot(agr, aes(x=SecondWordCVC, y=MeanSecondWordRT,fill=FirstWordCVC)) + 
+  geom_violin(trim=FALSE,alpha=.4) +
+  geom_jitter(shape=16, position=position_jitter(0.2)) +
+  facet_wrap(~SwitchCombo)
+
+```
+
+## LogRT
+
+```{r}
+
+agr <- df %>% 
+  filter(Task == "Concrete") %>% 
+  group_by(WhoseList,SwitchCombo,FirstWordCVC,SecondWordCVC) %>% 
+  summarize(MeanSecondWordLogRT = mean(SecondWordLogRT), 
+          CILow = ci.low(SecondWordLogRT), 
+          CIHigh = ci.high(SecondWordLogRT)) %>%
+  mutate(YMin = MeanSecondWordLogRT - CILow, 
+       YMax = MeanSecondWordLogRT + CIHigh)
+
+ggplot(agr, aes(x=SecondWordCVC, y=MeanSecondWordLogRT,fill=FirstWordCVC)) + 
+  geom_violin(trim=FALSE,alpha=.4) +
+  geom_jitter(shape=16, position=position_jitter(0.2)) +
+  facet_wrap(~SwitchCombo)
+
+```
+
+
+
+
+
+
+#  Analysis
+convert everything to factors
+```{r, include=FALSE, warning=FALSE, echo=FALSE}
+# str(d)
+
+convert_except <- function(df, exclude_cols) {
+  df[] <- lapply(names(df), function(col_name) {
+    if (!(col_name %in% exclude_cols)) {
+      return(as.factor(df[[col_name]]))  # Convert to factor if not in excluded columns
+    } else {
+      return(df[[col_name]])  # Leave the excluded columns unchanged
+    }
+  })
+  return(df)
+}
+# Specify columns to exclude from conversion
+exclude_columns <- c('ReactionTime', 'LogReactionTime','SecondWordLogRT')
+
+# Convert all columns to factors except for 'a' and 'd'
+df_factors <- convert_except(df.outliers.removed, exclude_columns)
+
+# Check the structure of the modified data frame
+# str(df_factors)
+
+```
+
+
+```{r, include=FALSE, warning=FALSE, echo=FALSE}
+contrasts(df_factors$SwitchCombo)
+contrasts(df_factors$Task)
+
+center = df_factors %>%
+  mutate(cTask = as.numeric(Task)-mean(as.numeric(Task)),
+         cAccuracy = as.numeric(Accuracy)-mean(as.numeric(Accuracy)),
+         cBlockOrder = as.numeric(BlockOrder)-mean(as.numeric(BlockOrder))
+         )
+  
+  # droplevels()
+```
+
+
+```{r}
+# names(center)
+
+m = lmer(SecondWordLogRT ~ cTask*SwitchCombo + (1|WordPair) + (1|ID.true), data=center)
+summary(m)
+```
+
+
+## In Valence
+
+```{r, include=FALSE, warning=FALSE, echo=FALSE}
+contrasts(df_factors$SwitchCombo)
+contrasts(df_factors$Task)
+
+center_val = df_factors %>%
+  filter(Task == "Valence") %>% 
+  mutate(
+         cAccuracy = as.numeric(Accuracy)-mean(as.numeric(Accuracy)),
+         cBlockOrder = as.numeric(BlockOrder)-mean(as.numeric(BlockOrder))
+         )
+  
+  # droplevels()
+```
+
+
+```{r}
+# names(center)
+
+m = lmer(SecondWordLogRT ~ SwitchCombo + (1|WordPair) + (1|ID.true), data=center_val)
+summary(m)
+```
+
+
+```{r}
+# names(center)
+
+m = lmer(SecondWordLogRT ~ FirstWordCVC*SecondWordCVC + (1|WordPair) + (1|ID.true), data=center_val)
+summary(m)
+```
+
+
+## In Concrete
+
+```{r, include=FALSE, warning=FALSE, echo=FALSE}
+
+center_conc = df_factors %>%
+  filter(Task == "Concrete") %>% 
+  mutate(
+         cAccuracy = as.numeric(Accuracy)-mean(as.numeric(Accuracy)),
+         cBlockOrder = as.numeric(BlockOrder)-mean(as.numeric(BlockOrder))
+         )
+  
+  # droplevels()
+```
+
+
+```{r}
+# names(center)
+
+m = lmer(SecondWordLogRT ~ SwitchCombo + (1|WordPair) + (1|ID.true), data=center_conc)
+summary(m)
+```
+
+```{r}
+# names(center)
+
+m = lmer(SecondWordLogRT ~ FirstWordCVC*SecondWordCVC + (1|WordPair) + (1|ID.true), data=center_val)
+summary(m)
+```
