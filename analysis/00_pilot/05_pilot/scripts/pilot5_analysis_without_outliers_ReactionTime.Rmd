@@ -37,6 +37,103 @@ ggplot(d, aes(x=LogReactionTime, fill=Task)) +
 
 ```
 
+```{r}
+names(d)
+dcen <- d %>% 
+  mutate(Word = as.factor(Word),
+         ID.true = as.factor(ID.true),
+         Task = as.factor(Task),
+         cAccuracy = as.numeric(Accuracy)-mean(as.numeric(Accuracy)),
+         cTask = as.numeric(Task)-mean(as.numeric(Task)))
+
+m <- lmer(LogReactionTime ~ cAccuracy*cTask + (1+cTask|Word) + (1+cTask|ID.true), data = dcen)
+summary(m)
+```
+
+
+```{r}
+agr <- d %>% 
+  group_by(Word,Task) %>%
+  summarize(MeanAccuracy = mean(Accuracy),
+            MeanReactionTime = mean(ReactionTime))
+
+
+ggplot(agr, aes(x = MeanReactionTime, y = MeanAccuracy)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  geom_text(aes(label = Word, color = Task), vjust = -0.5, hjust = 1.5) +
+  # guides(legend = "none")
+  theme(legend.position = "none")  # Remove the legend
+ggsave("../graphs/exp1b_accXrt.pdf",width = 5, height = 3)
+
+```
+
+```{r}
+# Compute highest accuracy for Concrete
+concrete_accuracy <- d %>% 
+  group_by(Word,Task) %>%
+  summarize(MeanAccuracy = mean(Accuracy),
+            MeanReactionTime = mean(ReactionTime)) %>% 
+  filter(Task == "Concrete") %>%
+  select(Word, MeanAccuracy) %>%
+  rename(ConcreteAccuracy = MeanAccuracy) %>% 
+  arrange(desc(ConcreteAccuracy)) %>% 
+  head(10)
+
+View(concrete_accuracy)
+
+
+agr <- d %>% 
+  filter(Word %in% concrete_accuracy$Word) %>% 
+  group_by(Word,Task) %>%
+  summarize(MeanAccuracy = mean(Accuracy),
+            MeanReactionTime = mean(ReactionTime))
+
+ggplot(agr, aes(x = MeanReactionTime, y = MeanAccuracy)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  geom_text(aes(label = Word, color = Task), vjust = -0.5, hjust = 1.5)
+  # guides(legend = "none")
+  # theme(legend.position = "none")  # Remove the legend
+# ggsave("../graphs/exp1b_accXrt.pdf",width = 5, height = 3)
+
+```
+
+```{r}
+agr <- d %>% 
+  filter(Word %in% concrete_accuracy$Word) %>% 
+  group_by(Word,Task) %>% 
+  reframe(MeanAccuracy = mean(Accuracy), 
+          CILow = ci.low(Accuracy), 
+          CIHigh = ci.high(Accuracy)) %>%
+  mutate(YMin = MeanAccuracy - CILow, 
+         YMax = MeanAccuracy + CIHigh)
+# View(agr)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Word,y=MeanAccuracy, fill = Task)) +
+  geom_bar(position=dodge,stat="identity") + 
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9))
+```
+
+```{r}
+agr <- d %>% 
+  filter(Word %in% concrete_accuracy$Word) %>% 
+  group_by(Word,Task) %>% 
+  reframe(MeanReactionTime = mean(ReactionTime), 
+          CILow = ci.low(ReactionTime), 
+          CIHigh = ci.high(ReactionTime)) %>%
+  mutate(YMin = MeanReactionTime - CILow, 
+         YMax = MeanReactionTime + CIHigh)
+# View(agr)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Word,y=MeanReactionTime, fill = Task)) +
+  geom_bar(position=dodge,stat="identity") + 
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9))
+```
+
+
 # First Remove participants who aren't super , aggregating over Task
 
 ```{r}

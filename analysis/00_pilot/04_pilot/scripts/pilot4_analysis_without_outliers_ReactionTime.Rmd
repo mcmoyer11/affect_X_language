@@ -107,9 +107,12 @@ ggplot(df.outliers.removed, aes(x=ReactionTime, fill=Task)) +
 ```
 
 
+
+
+
+
 # convert everything to factors
 ```{r, include=FALSE, warning=FALSE, echo=FALSE}
-str(d)
 
 convert_except <- function(df, exclude_cols) {
   df[] <- lapply(names(df), function(col_name) {
@@ -134,12 +137,12 @@ str(df_factors)
 
 
 ```{r, include=FALSE, warning=FALSE, echo=FALSE}
-contrasts(df_factors$ConcValFinal)
+contrasts(df_factors$ConcValCombo)
 contrasts(df_factors$Task)
 
 center = df_factors %>%
   mutate(cTask = as.numeric(Task)-mean(as.numeric(Task)),
-         cAccuracyCorrected = as.numeric(AccuracyCorrected)-mean(as.numeric(AccuracyCorrected)),
+         cAccuracy = as.numeric(Accuracy)-mean(as.numeric(Accuracy)),
          cBlockOrder = as.numeric(BlockOrder)-mean(as.numeric(BlockOrder))
          )
   
@@ -159,14 +162,23 @@ summary(m)
 No.
 ```{r}
 
-m = lmer(LogReactionTime ~ cTask*ConcValFinal + (1+ConcValFinal+cTask|ID.true) + (1+cTask|Word), data=center)
+m = lmer(LogReactionTime ~ cTask*ConcValCombo + (1+ConcValCombo+cTask|ID.true) + (1+cTask|Word), data=center)
 # saveRDS(m, "../models/model-Task-ConcValFinal_outlier_excl_ReactionTime_corrected.rds")
 
 # m <- readRDS("../models/model-Task-ConcValFinal_outlier_excl_ReactionTime_corrected.rds")
 summary(m)
 ```
 
-# Does AccuracyCorrected predict reaction time? 
+# Is there an Interaction between Task and WordList?
+No.
+```{r}
+
+m = lmer(LogReactionTime ~ cTask*WhoseList + (1+cTask|ID.true) + (1+cTask|Word), data=center)
+
+summary(m)
+```
+
+# Does Accuracy predict reaction time? 
 
 In other words, is reaction time affected by certainty about the categorization?
 - No.

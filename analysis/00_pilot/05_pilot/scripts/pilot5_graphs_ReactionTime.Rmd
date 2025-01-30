@@ -95,10 +95,11 @@ range(d.inaccurate.removed$LogReactionTime)
 hist(d.inaccurate.removed$LogReactionTime, breaks=100, col="lightblue", xlab="LogReactionTime (ms)",
         main="Histogram with Normal Curve")
 
-quantile(d.inaccurate.removed$LogReactionTime)
-IQR(d.inaccurate.removed$LogReactionTime)*3 # 0.7526289
-cutoff.high <- quantile(d.inaccurate.removed$LogReactionTime)[4] + IQR(d.inaccurate.removed$LogReactionTime)*3 # 8.419261
-cutoff.low <- quantile(d.inaccurate.removed$LogReactionTime)[2] - IQR(d.inaccurate.removed$LogReactionTime)*3# 6.5088838.419261
+quantile(d.inaccurate.removed$LogReactionTime, na.rm = TRUE)
+IQR(d.inaccurate.removed$LogReactionTime, na.rm = TRUE)*3 # 0.7526289
+
+cutoff.high <- quantile(d.inaccurate.removed$LogReactionTime, na.rm = TRUE)[4] + IQR(d.inaccurate.removed$LogReactionTime, na.rm = TRUE)*3 # 8.419261
+cutoff.low <- quantile(d.inaccurate.removed$LogReactionTime, na.rm = TRUE)[2] - IQR(d.inaccurate.removed$LogReactionTime, na.rm = TRUE)*3# 6.5088838.419261
 
 
 # remove subjects with ReactionTime higher than 3 x IQR
@@ -148,23 +149,6 @@ ggplot(agr, aes(x=Task, y=MeanReactionTime,fill=Task)) +
 
 ```
 
-# LogReactionTime by BlockOrder and Task
-```{r}
-
-agr <- df.outliers.removed %>%
-    group_by(BlockOrder,Task,Word) %>%
-    summarize(MeanLogReactionTime = mean(LogReactionTime), 
-              CILow = ci.low(LogReactionTime), 
-              CIHigh = ci.high(LogReactionTime)) %>%
-    mutate(YMin = MeanLogReactionTime - CILow, 
-           YMax = MeanLogReactionTime + CIHigh)
-
-ggplot(agr, aes(x=Task, y=MeanLogReactionTime,fill=BlockOrder)) + 
-    geom_violin(trim=FALSE,alpha=.4) +
-    geom_jitter(shape=16, position=position_jitter(0.2))
-
-```
-
 # ReactionTime by BlockOrder and Task
 ```{r}
 
@@ -201,7 +185,11 @@ ggplot(data=agr, aes(x=Task,y=MeanReactionTime,fill=Task)) +
 ```
 
 
-## By ConcValCombo category and Task
+
+
+
+
+# By ConcValCombo category and Task
 
 ### Mean Raw ReactionTime and Effects of Word Valence/Concreteness
 
@@ -223,25 +211,8 @@ ggplot(data=agr, aes(x=Task,y=MeanReactionTime,fill=ConcValCombo)) +
 
 ```
 
-### Mean Raw ReactionTime and Effects of Word Valence/Concreteness
-
-```{r}
-
-agr <- df.outliers.removed %>%
-    group_by(BlockOrder,Task,ConcValCombo) %>%
-    reframe(MeanReactionTime = mean(ReactionTime), CILow = ci.low(ReactionTime), CIHigh = ci.high(ReactionTime)) %>%
-    mutate(YMin = MeanReactionTime - CILow, YMax = MeanReactionTime + CIHigh)
 
 
-dodge = position_dodge(.9)
-ggplot(data=agr, aes(x=Task,y=MeanReactionTime,fill=BlockOrder)) +
-  geom_bar(position=dodge,stat="identity") +
-  facet_wrap(~ConcValCombo) +
-  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9))
-  # theme(axis.text.x = element_text(angle = 45, hjust = 1))
-  # guides(fill = "none"
-
-```
 
 # Variance
 

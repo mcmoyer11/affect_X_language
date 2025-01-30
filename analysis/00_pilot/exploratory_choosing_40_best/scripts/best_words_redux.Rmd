@@ -69,6 +69,12 @@ options(tibble.print_max = Inf, tibble.print_min = Inf, tibble.width = Inf)
 - abstract-negative: dislike, despise, abhor
 
 ```{r}
+length(unique(d$Word))
+length(unique(d$ID.true))
+```
+
+
+```{r}
 # Filter for words starting with "ab" or "dis"
 words_with_prefixes <- d %>%
   filter(str_starts(Word, "ab") | str_starts(Word, "dis") | str_starts(Word, "de")) %>%
