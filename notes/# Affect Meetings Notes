@@ -1,0 +1,589 @@
+# Notes From First meeting of affect project
+
+
+are the judgements just a habit? or is 
+
+
+what is the relevant meaning of the event structure that is the descriptive foil?
+
+
+
+accessing the affective content 
+
+
+
+Controlling for salience and 
+
+
+1. 
+2. 
+
+list of the different viaraions of the first pstudy
+
+***add 
+
+outline like a paper
+switching cost versus priming
+
+separate al the phil stuff
+
+
+april 2 research meeting @14h
+
+
+
+--------------------------------------------
+Meeting 2/4
+
+--------------------------------------------
+
+
+will effect size be the largest?
+verbs, nouns, adjs between participants
+affective categorization
+pilot data for switch cost
+control for semantic similarity
+
+training session?
+
+
+
+--------------------------------------------
+effect size?
+semantic similarity?
+
+
+
+--------------------------------------------
+Meeting 11/4
+
+--------------------------------------------
+
+
+
+cfp for june 2025
+
+june 15
+
+
+
+Brent Strickland
+
+http://phillab.host.dartmouth.edu/
+
+josh knobe
+pascal ludwig
+
+kevin reuter
+liuba papeo
+
+lillia rissman
+https://www.liliarissman.com/
+
+chemla
+
+Paul Egre
+
+
+
+
+
+do both studies
+abstract/concrete (no neutral)
+same pos/neg + neutral - three-way response
+
+
+Proposal: Experiment 1: positive, negative, neutral items. DV positive, negative or neutral. Design trial blocks to look at switch costs.Are switches between valence harder than switches involving neutral? Are positive/negative faster than neutral?
+
+Proposal: Experiment 2: positive/negative vs. abstract/concrete (between participants. same word list. no neutral items). 2 choice dv only. Is positive/negative faster than abstract/concrete? Design trials so that you have equal number of switches and non-switches. Are switch costs higher for positive/negative than abstract/concrete?2a: affect task with two response options2b descriptive task with abs/conc response options2c’: switch costs (pilot)
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+Meeting 22/7
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+workshop
+12, 13 ou semaine du 16
+
+
+Morgan's tasks:
+- Words size / syllable size of the word list
+- frequency
+- Add a training period and make more clear what the categories are meant to track
+
+*** send summary of switch-cost and hypotheses
+
+
+does the existence of a feature (perceptual or otherwise) imply core knowledge?
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+Thoughts/Notes 14/8 (Morgan)
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+Concreteness instructions from brysbaert:
+
+Some words refer to things or actions in reality, which you can experience directly through one of the five senses. We call these words concrete words. 
+
+Other words refer to meanings that cannot be experienced directly but which we know because the meanings can be defined by other words. 
+
+These are abstract words. Still other words fall in-between the two extremes, because we can experience them to some extent and in addition we rely on language to understand them. We want you to indicate how concrete the meaning of each word is for you by using a 5-point rating scale going from abstract to concrete.
+
+ A concrete word comes with a higher rating and refers to something that exists in reality; you can have immediate experience of it through your senses (smelling, tasting, touching, hearing, seeing) and the actions you do. The easiest way to explain a word is by pointing to it or by demonstrating it (e.g. To explain 'sweet' you could have someone eat sugar; To explain 'jump' you could simply jump up and down or show people a movie clip about someone jumping up and down; To explain 'couch', you could point to a couch or show a picture of a couch).
+
+An abstract word comes with a lower rating and refers to something you cannot experience directly through your senses or actions. Its meaning depends on language. The easiest way to explain it is by using other words (e.g. There is no simple way to demonstrate 'justice'; but we can explain the meaning of the word by using other words that capture parts of its meaning).
+
+
+From Warriner:
+The scale ranges from 1 (happy [excited; controlled]) to 9 (unhappy [calm; in control]). At one extreme of this scale, you are happy, pleased, satisfied, contented, hopeful. When you feel completely happy you should indicate this by choosing rating 1. 
+
+The other end of the scale is when you feel completely unhappy, annoyed, unsatisfied, melancholic, despaired, or bored. You can indicate feeling completely unhappy by selecting 9. 
+
+The numbers also allow you to describe intermediate feelings of pleasure, by selecting any of the other feelings. 
+
+If you feel completely neutral, neither happy nor sad [not excited nor at all calm; neither in control nor controlled], select the middle of the scale (rating 5).
+
+Please work at a rapid pace and don’t spend too much time thinking about each word. Rather, make your ratings based on your first and immediate reaction as you read each word.
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+Meeting 12/9
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+demander a nathalie 
+
+on mets 2000 sur prolific compte de brent
+
+
+block design for explicit switch cost
+
+
+in the big blocks each word can be seen twice
+
+
+go into chatgpt and gemini:
+
+put in a list of words and ask it to simulate the two experiments
+
+see what words are the best 
+
+- do it multiple times and take the averge 
+- 
+
+
+- 40 best words
+
+
+
+
+switch costs larger for valence rather than domaine?
+
+
+sc for 
+red
+red
+
+slower for red 2 when 
+
+val
+val
+
+dont make predictions
+
+
+email
+vincent 
+nathalie 
+cc everyone else
+
+mitochondrial myopathy and mitochondrial disease complex 1 (variant not yet characterized by name)
+
+
+
+
+for all the words in the following .csv file, please (1) determine the valence of the word on a scale of 1 to 7, where 1 is negative and 7 positive, then (2) determine the concreteness/abstractness of the word on a scale of 1 to 7, where 1 is abstract and 7 is concrete. output the result in a csv with the words in one column, a second column with the valence judgement, and a third with the concreteness judgement.
+
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+Meeting 4/10 (Discussion of Pilot results)
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+Long story short, we find effects of Task but not Word Type (ConcValCombo)
+and removing outliers using IQR doesn't change the results
+
+
+
+narrow the criterion for each label
+
+
+AI
+give it the instructions 
+
+For this task, what percentage of people do you think would 
+if we ask 100 people
+
+
+concvalcombo across participants
+
+
+*****Task blocked between subjects
+
+
+***check out neutral valence words but extreme conc/abs words
+
+
+semantic similarity jusdgements from AI
+
+
+analysis (brent) : RT difference for semantic vs valence as a function of accuracy
+
+what percentage of participants showed the effects?
+what percentage of items showed effects?
+
+testing with Likert judgement
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+[affect]
+
+Given the words listed below, how do you think human participants would respond in an experimental task given the following instructions?
+
+"In the following experiment, you will see words presented one after the other.
+Your job is to categorize each word as POSITIVE or NEGATIVE. You can answer by pressing the corresponding F key for negative or the J key for negative on your keyboard. Please make your evaluation as quickly as possible. For example, the word KITTEN generally has POSITIVE associations. That means thinking of kittens make you feel happy, pleased, satisfied, contented, hopeful. You can indicate a word is positive in this sense by pressing the key corresponding to POSITIVE. In contrast, the word DEATH generally has NEGATIVE associations. That means thinking of death make you feel completely unhappy, annoyed, unsatisfied, melancholic, despaired, or bored. You can indicate a word is negative in this sense by pressing the key corresponding to NEGATIVE. Please work at a rapid pace and don’t spend too much time thinking about each word. Rather, make your response based on your first and immediate reaction as you read each word. Some words may not be straightforwardly one or the other. If you feel completely neutral, neither happy nor sad, try your best to choose one option all the same."
+
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+Meeting 8/10 (Discussion of Pilot1 results)
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+norming replicaiton of brysbaert and warriner with 40 most extreme
+
+most extreme
+within task blocked participants
+
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+Meeting 8/10 (Discussion of Pilot2 results)
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+- re-run norming on word list
+include feedback 
+and more 
+
+- syntactic category and semantic type
+nouns, verbs for semantic task object vs. event
+
+
+>>> is there soemthing wrong with the selectors in the Concrete task? is the code inverting the selection and label?
+
+
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+Morgan Notes in between meetings
+:::::::::::::::::::::::::::::::::::::::::::::::::
+Notes 
+instructions concrete: 
+
+For example, the word KITTEN generally has CONCRETE associations. Concrete words refer to things or actions in reality, which you can experience directly through one of the five senses. You should indicate a word is concrete in this sense by pressing the key corresponding to CONCRETE.
+
+In contrast, the word LIBERTY generally has ABSTRACT associations. Abstract words refer to things that cannot be experienced directly through your senses or actions, but which we know because their meanings can be defined by other words. You should indicate a word is abstract in this sense by pressing the key corresponding to ABSTRACT.
+
+instructions valence:
+For example, the word KITTEN generally has POSITIVE associations. That means thinking of kittens make you feel happy, pleased, satisfied, contented, hopeful. You can indicate a word is positive in this sense by pressing the key corresponding to POSITIVE.
+
+In contrast, the word DEATH generally has NEGATIVE associations. That means thinking of death make you feel completely unhappy, annoyed, unsatisfied, melancholic, despaired, or bored. You can indicate a word is negative in this sense by pressing the key corresponding to NEGATIVE.
+
+
+problems in the code:
+
+the keys reverse from training to test
+definitely for valance
+
+
+
+ChatGPT nouns round 2:
+what 10 nouns do you think people would perceive as the most positive (i.e., make them feel happy, pleased, satisfied, contented, hopeful) and refer to concrete concepts (i.e., things or actions in reality, which you can experience directly through one of the five senses)?
+
+
+
+[pos-abs]
+what 10 nouns do you think people would perceive as the most positive (i.e., make them feel happy, pleased, satisfied, contented, hopeful) and refer to abstract concepts (i.e., things that cannot be experienced directly through your senses or actions, but which we know because their meanings can be defined by other words)?
+
+[pos-conc]
+what 10 nouns do you think people would perceive as the most positive (i.e., make them feel happy, pleased, satisfied, contented, hopeful) and refer to concrete concepts (i.e., things or actions in reality, which you can experience directly through one of the five senses)?
+
+[neg-conc]
+what 10 nouns do you think people would perceive as the most negative (i.e., makes them feel completely unhappy, annoyed, unsatisfied, melancholic, despaired, or bored) and refer to concrete concepts (i.e., things or actions in reality, which you can experience directly through one of the five senses)?
+
+[neg-abs]
+what 10 nouns do you think people would perceive as the most positive (i.e., makes them feel completely unhappy, annoyed, unsatisfied, melancholic, despaired, or bored) and refer to abstract concepts (i.e., things that cannot be experienced directly through your senses or actions, but which we know because their meanings can be defined by other words)?
+
+
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+meeting 25/10
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+>>remove innacurate items for RT analysis 
+can we choose items for which 
+> rework graphs in terms of propPos / PropConc
+
+
+
+control for morophological patterns confounds
+
+perplexity
+
+animate / inanimate
+
+noun/verb
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+meeting 8/11
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+***remove innacurate trials
+
+** on correct items only
+
+
+the RT difference, can it be expliained by accuracy
+
+- look at how responses change over subsequent views of each word
+- do you still see the RT difference even in the third block?
+
+- test the final word list (as pilot)
+- code in switch costs based in the test blocks (if there wasn't difference)
+
+- start exploring potential switch cost
+
+for a concrete judgement, switchess in valence should incur switch cost
+for concrete judgement, no switch in valence won't incur switch cost
+
+
+implicit
+switching across val/conc
+praise vs discourage
+(neg)
+- answer
+
+switching value within valence
+
+discourage/praise
+(neg)(neg)
+vs.
+(pos)(neg)
+()()
+
+
+
+cnu qualification avant 6/12
+- make it clear of fluency in french in the application
+https://www.galaxie.enseignementsup-recherche.gouv.fr/ensup/cand_qualification_Odyssee.htm
+
+ramon y carhal
+
+
+
+pascal ludwig
+philosophical issues in cognitive science
+deuxieme semester
+lundi 12 a 14
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+meeting 15/11
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+- look back at previous
+
+- how do the word lists influence the judgements
+- how does surprisal effect
+
+
+preregister 
+
+- send to everyone the references for context sensitivity hypothesis in affect first literature 
+
+
+for switch cost:
+(check out procedure in https://repub.eur.nl/pub/959/PSY001.pdf)
+- Responses must be matched, correct answers only
+- aggreage all results
+- look at RT only on the second pair / second word
+- explicit: if pos-pos vs neg-pos --- second should be larger
+
+
+
+Compare RTS in 
+accuracy in first block only
+
+compare first and second responses
+are the differences between Task larger?
+then we can narrow down specific items
+
+
+throw in a few with mean accuracy for concrete is larger than mean accuracy for valence
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+Isidora meeting 20/11 about Barcelona gig
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+Barcelona gig 
+~150-200 euro roundtrip ticket (2h30 for air trip)
+Maybe around the same for the train (6-7 hour train ride)
+
+dorm style hostly for 4 /nights a week, as low as 100Euro
+
+The seminar would it be one semester, two? 
+
+
+
+estimating 14 weeks traveling back and forth each week:
+hotel: 4 nights/week stay ~150 = 2100
+airplane: 150 roundtrip = 2100
+
+total: 4200 per 14 weeks at least
+
+
+
+how many times a week?
+teh seminar, how many semesters
+
+
+two other seminars
+one on thursdays and one on wednesdays
+
+laia maillol
+
+
+apply 
+
+three times a month for 2-3 days
+
+marco baroni (at pompeo fabra)
+> 
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+meeting 29/11 with Anouch
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+next steps: nouns and adjectives
+
+
+
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+10/12
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+What is another judgment that is equally salient/common in everyday life ?
+
+
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+17/12
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+already with nouns, interaciton with frequency and valence/concreteness
+
+
+- with verbs, frequency inverse correlation with valence
+- with nouns, direct corelation
+
+
+- mor
+
+
+- preregistration for verbs only
+- 
+
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+17/12
+:::::::::::::::::::::::::::::::::::::::::::::::::
+for participants for whom the judgements are clear, are they still RT difference?
+
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+31/1
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+remove the bad participants and redo acuracy graphs
+
+
+what participants of 
+
+to chatgpt: to what extent does this word relate to a moral code?
+
+
+psychological/physical for adjectives but not nouns
+
+
+- by-participant analyses
+---> look at part patterns
+----> remove inac parts from accuracy res
+- animate vs inanimate for next week
+- adjectives for week after
+
+
+
+:::::::::::::::::::::::::::::::::::::::::::::::::
+7/8
+:::::::::::::::::::::::::::::::::::::::::::::::::
+
+- change the alpha value for the graphs block order
+- remove asshole and put jerk
+
+when it IS animate, you're faster ---- is this true globally?
+
+how is response time affected by which option you chose?
+>>>> yes
+
+competition between strong core psych constructs? (valence vs animacy)
+(see brent's 2016 paper)
+
+does it suggest that *in*animacy is not a core category?
+>>>yes this is common with core categories
+
+
+- brent's paper about inferring effects and causes and differences on whether the events are physical or psychological
+
+
+
+count versus mass nouns?
+
+for adjectives:
+physical psychological
+
+can we give them a noun with the adject
+
+
+Social: Adjectives describing interpersonal qualities (e.g., kind, rude, friendly).
+vs.
+Physical
+
+subjective vs. objective
+
+(there can be faultless disagreement)
+vs.
+there is a fact of the matter
+
+
++ abstract concrete

@@ -1,0 +1,336 @@
+---
+title: 'Pilot 1: troubleshooting with training and choice lables'
+author: "morgan moyer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(multcomp) # not available for this version of R
+library(stringr)
+library(textstem)
+library(tidyverse)
+theme_set(theme_bw())
+cbPalette <- c("#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73")
+this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(this.dir)
+source("../../../helpers.R")
+
+d <- read.csv("../data/processed.csv")
+```
+
+
+```{r}
+dconc <- d %>% 
+  filter(Task == "Semantic")
+
+table(dconc$Value,dconc$Key_value_F)
+View(d)
+```
+
+
+```{r}
+agr <- d %>% 
+  # filter(Version == "Pilot1") %>% 
+  filter(Task == "Semantic") %>% 
+  filter(Word %in% c("fall","hurl","qualify")) %>% 
+  mutate(Response.n = as.numeric(factor(Response, levels = c("abstract", "concrete"))) - 1) %>% 
+  group_by(Word,ConcValCombo) %>%
+  summarize(PropConcrete = mean(Response.n))
+  # select(ID.true, Task,ConcValCombo, Word, WhoseList, Response)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=reorder(Word,PropConcrete),y=PropConcrete,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+# Introduction
+
+What's going on with the low accuracy on Concrete Trials?
+
+
+TL;DR:
+- basically there's a coding error, and people actually ARE accurate.
+
+
+
+# Look at the test items where there was/wasn't a switch in the lables
+#Find participants in test items where F = abstract/negative and J != concrete/positive
+
+```{r}
+
+table(d$Key_value_J,d$Task,d$Group)
+table(d$Comment,d$Task)
+
+test.switch <- d %>% 
+  # Since training was always F = negative/abstract, switch is the opposite
+  filter((!Key_value_J %in% c("positive","concrete"))
+           # (PennElementType == "Selector")
+         ) 
+switch.IDs <- test.switch$ID.true
+
+# how many participants have the switch?
+length(unique(test.switch$ID.true))
+
+nrow(test.switch)
+nrow(d)
+
+```
+
+### How does accuracy and RT change in these cases?
+Interestingly, Concrete accuracy is higher than for valance?
+```{r}
+agr <- d %>% 
+  group_by(Task) %>% 
+  summarize(MeanAccuracy = mean(Accuracy), 
+          CILow = ci.low(Accuracy), 
+          CIHigh = ci.high(Accuracy)) %>%
+  mutate(YMin = MeanAccuracy - CILow, 
+         YMax = MeanAccuracy + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Task,y=MeanAccuracy,fill=Task)) +
+  geom_bar(position=dodge,stat="identity") + 
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9))
+
+```
+
+
+```{r,fig.width=10, fig.height=15}
+agr <- d %>% 
+  group_by(Task,Word) %>% 
+  summarize(MeanAccuracy = mean(Accuracy), 
+          CILow = ci.low(Accuracy), 
+          CIHigh = ci.high(Accuracy)) %>%
+  mutate(YMin = MeanAccuracy - CILow, 
+         YMax = MeanAccuracy + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Task,y=MeanAccuracy,fill=Task)) +
+  geom_bar(position=dodge,stat="identity") + 
+  facet_wrap(~Word,ncol=5) +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9))
+
+```
+
+
+
+
+## In the No Switch trials
+
+```{r}
+
+test.no.switch.conc <- test.no.switch %>% 
+  filter(Task == "Concrete") %>% 
+  mutate(Response.n = ifelse(Response == "concrete", 1, 0) )
+
+test.no.switch.conc$Response.n = as.numeric(test.no.switch.conc$Response.n)
+
+```
+
+
+```{r,fig.width=10, fig.height=5}
+agr <- test.no.switch.conc %>% 
+  group_by(Word) %>% 
+  summarize(PropConcrete = mean(Response.n),
+          CILow = ci.low(Response.n),
+          CIHigh = ci.high(Response.n)) %>%
+  mutate(YMin = PropConcrete - CILow,
+         YMax = PropConcrete + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Word,y=PropConcrete,fill=Word)) +
+  geom_bar(position=dodge,stat="identity") + 
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+## In the Switch trials
+
+```{r}
+
+test.switch.conc <- test.switch %>% 
+  filter(Task == "Concrete") %>% 
+  mutate(Response.n = ifelse(Response == "concrete", 1, 0) )
+
+test.switch.conc$Response.n = as.numeric(test.switch.conc$Response.n)
+
+```
+
+
+```{r,fig.width=10, fig.height=5}
+agr <- test.switch.conc %>% 
+  group_by(Word) %>% 
+  summarize(PropConcrete = mean(Response.n),
+          CILow = ci.low(Response.n),
+          CIHigh = ci.high(Response.n)) %>%
+  mutate(YMin = PropConcrete - CILow,
+         YMax = PropConcrete + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Word,y=PropConcrete,fill=Word)) +
+  geom_bar(position=dodge,stat="identity") + 
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+# Add a switch column
+
+```{r}
+# Add Task column
+d$Switch <- ifelse(d$Key_value_F %in% c("concrete","positive"), "Switch","NoSwitch")
+d$Response.n = as.numeric(d$Response)
+
+```
+
+
+What we can see from the following graph, is that the key labels are clearly inverted....but only for the concreteness task. responses are more or less in complementary distributions
+
+
+```{r,fig.width=10, fig.height=5}
+agr <- d %>% 
+  filter(Task == "Concrete") %>% 
+  mutate(Response.n = ifelse(Response == "concrete", 1, 0),
+         Response.n = as.numeric(Response.n)) %>% 
+  group_by(Switch,Word) %>% 
+  summarize(PropConcrete = mean(Response.n),
+          CILow = ci.low(Response.n),
+          CIHigh = ci.high(Response.n)) %>%
+  mutate(YMin = PropConcrete - CILow,
+         YMax = PropConcrete + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Word,y=PropConcrete,fill=Switch)) +
+  geom_bar(position=dodge,stat="identity") + 
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+So in the NoSwitch conditions there's mislableing.
+```{r,fig.width=10, fig.height=5}
+agr <- d %>% 
+  filter(Task == "Concrete") %>% 
+  group_by(Switch,Word) %>% 
+  summarize(MeanAccuracy = mean(Accuracy),
+          CILow = ci.low(Accuracy),
+          CIHigh = ci.high(Accuracy)) %>%
+  mutate(YMin = MeanAccuracy - CILow,
+         YMax = MeanAccuracy + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Word,y=MeanAccuracy,fill=Switch)) +
+  geom_bar(position=dodge,stat="identity") + 
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+## Valence task
+
+Actually Switching does seem to decrease accuracy
+```{r,fig.width=10, fig.height=5}
+agr <- d %>% 
+  filter(Task == "Valence") %>% 
+  mutate(Response.n = ifelse(Response == "positive", 1, 0),
+         Response.n = as.numeric(Response.n)) %>% 
+  group_by(Switch,Word) %>% 
+  summarize(PropPositive = mean(Response.n),
+          CILow = ci.low(Response.n),
+          CIHigh = ci.high(Response.n)) %>%
+  mutate(YMin = PropPositive - CILow,
+         YMax = PropPositive + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Word,y=PropPositive,fill=Switch)) +
+  geom_bar(position=dodge,stat="identity") + 
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+```{r,fig.width=10, fig.height=5}
+agr <- d %>% 
+  filter(Task == "Valence") %>% 
+  group_by(Switch,Word) %>% 
+  summarize(MeanAccuracy = mean(Accuracy),
+          CILow = ci.low(Accuracy),
+          CIHigh = ci.high(Accuracy)) %>%
+  mutate(YMin = MeanAccuracy - CILow,
+         YMax = MeanAccuracy + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Word,y=MeanAccuracy,fill=Switch)) +
+  geom_bar(position=dodge,stat="identity") + 
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+Corrective column and save to CSV
+
+```{r, eval=FALSE,echo=FALSE}
+d <- d %>%
+  mutate(CorrectedResponse = case_when(
+    Switch == "NoSwitch" & Task == "Concrete" & Response == "concrete" ~ "abstract",
+    Switch == "NoSwitch" & Task == "Concrete" & Response == "abstract" ~ "concrete",
+    TRUE ~ Response  # For all other cases, keep the value of Response
+  ))
+
+d$CorrectedAccuracy <- mapply(function(correctedresponse, pattern) {
+  ifelse(grepl(correctedresponse, pattern), 1, 0)
+}, d$CorrectedResponse, d$ConcValCombo)
+```
+
+Save to .csv
+```{r}
+# write.csv(d,"../data/corrected.csv")
+```
+
+This graph should look different:
+
+```{r}
+agr <- d %>% 
+  filter(Task == "Concrete") %>% 
+  group_by(Switch,Word) %>% 
+  summarize(MeanCorrectedAccuracy = mean(CorrectedAccuracy),
+          CILow = ci.low(CorrectedAccuracy),
+          CIHigh = ci.high(CorrectedAccuracy)) %>%
+  mutate(YMin = MeanCorrectedAccuracy - CILow,
+         YMax = MeanCorrectedAccuracy + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Word,y=MeanCorrectedAccuracy,fill=Switch)) +
+  geom_bar(position=dodge,stat="identity") + 
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+This graph should look the same.
+```{r}
+agr <- d %>% 
+  filter(Task == "Valence") %>% 
+  group_by(Switch,Word) %>% 
+  summarize(MeanCorrectedAccuracy = mean(CorrectedAccuracy),
+          CILow = ci.low(CorrectedAccuracy),
+          CIHigh = ci.high(CorrectedAccuracy)) %>%
+  mutate(YMin = MeanCorrectedAccuracy - CILow,
+         YMax = MeanCorrectedAccuracy + CIHigh)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=Word,y=MeanCorrectedAccuracy,fill=Switch)) +
+  geom_bar(position=dodge,stat="identity") + 
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```

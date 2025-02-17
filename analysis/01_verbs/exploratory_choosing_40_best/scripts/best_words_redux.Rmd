@@ -1,0 +1,885 @@
+---
+title: "Finding Most Accurate Words, Redux"
+author: "morgan moyer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(multcomp) # not available for this version of R
+library(stringr)
+library(textstem)
+library(tidyverse)
+library(kableExtra)
+theme_set(theme_bw())
+cbPalette <- c("#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73")
+this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(this.dir)
+source("../../../helpers.R")
+
+p1 <- read.csv("../data/p1_corrected.csv")
+p1["Version"] <- "Pilot1"
+p1["WhoseList"] <- "Morgan1"
+p1$Response <- NULL
+colnames(p1)[colnames(p1) == "ResponseCorrected"] <- "Response"
+p1$ConcValCombo <- NULL
+colnames(p1)[colnames(p1) == "ConcValCorrected"] <- "ConcValCombo"
+
+p2 <- read.csv("../data/p2_corrected.csv")
+p2["Version"] <- "Pilot2"
+p2["WhoseList"] <- "Morgan2"
+p2$Accuracy <- NULL # delete original accuracy column
+colnames(p2)[colnames(p2) == "CorrectedAccuracy"] <- "Accuracy"
+p2$Response <- NULL
+# colnames(p2)[colnames(p2) == "CorrectedResponse"] <- "Response"
+colnames(p2)[colnames(p2) == "CorrectedResponse"] <- "Response"
+
+p3 <- read.csv("../data/p3_processed.csv")
+p3["Version"] <- "Pilot3"
+p3["WhoseList"] <- "Combined1"
+
+p4 <- read.csv("../data/p4_corrected.csv")
+p4["Version"] <- "Pilot4"
+p4["WhoseList"] <- "Combined2"
+p4$Accuracy <- NULL
+colnames(p4)[colnames(p4) == "AccuracyCorrected"] <- "Accuracy"
+p4$ConcValCombo <- NULL
+colnames(p4)[colnames(p4) == "ConcValFinal"] <- "ConcValCombo"
+
+
+d <- bind_rows(p1,p2,p3,p4)
+
+d$Task <- gsub("Semantic", "Concrete", d$Task)
+
+
+```
+
+```{r}
+# Set the maximum width for printing all columns in the console
+# Ensure that the full tibble output is printed
+options(tibble.print_max = Inf, tibble.print_min = Inf, tibble.width = Inf)
+```
+
+# Removing morphologically complex words
+- concrete-negative: discourage
+- abstract-negative: dislike, despise, abhor
+
+```{r}
+length(unique(d$Word))
+length(unique(d$ID.true))
+```
+
+
+```{r}
+# Filter for words starting with "ab" or "dis"
+words_with_prefixes <- d %>%
+  filter(str_starts(Word, "ab") | str_starts(Word, "dis") | str_starts(Word, "de")) %>%
+  select(Word) %>%
+  distinct()
+
+# Print the result
+print(words_with_prefixes)
+```
+
+
+
+# Look at the words from pilot 4 that didn't turn out as expected
+- fall, hurl, rot, scorn, qualify, repair, murder
+
+Conclusion....need to minimize the variance ! not just maximizing the meanas\
+```{r}
+
+table(rot$Version)
+rot <- d %>% 
+  filter(Word %in% c("fall","hurl","scorn","qualify","repair","murder","rot")) %>% 
+  filter(Task == "Concrete") %>% 
+  # because it should be 
+  # filter(Version != "Pilot1") %>%
+  mutate(Response.n = as.numeric(factor(Response, levels = c("abstract", "concrete"))) - 1) %>% 
+  group_by(Word,Version,ConcValCombo) %>% 
+  summarize(PropConcrete = mean(Response.n),
+          CILow = ci.low(Response.n), 
+          CIHigh = ci.high(Response.n)) %>%
+  mutate(YMin = PropConcrete - CILow, 
+         YMax = PropConcrete + CIHigh)
+
+  # filter(PropConcrete > .75 | PropConcrete < .25)
+
+dodge = position_dodge(.9)
+ggplot(data=rot, aes(x=Word,y=PropConcrete,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~Version) +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position=position_dodge(0.9)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  # guides(fill = "none")
+  
+```
+
+# Multiple ConcalValCombo AGain
+```{r}
+# Identify words with multiple ConcValCombo values
+words_with_multiple_ConcValCombo <- d %>%
+  group_by(Word) %>%
+  summarise(ConcValCombo_count = n_distinct(ConcValCombo)) %>%  # Count unique ConcValCombo values per Word
+  filter(ConcValCombo_count > 1) %>%                           # Keep only Words with multiple ConcValCombo values
+  pull(Word)                                                   # Extract the list of Words
+
+# Print the result
+print(words_with_multiple_ConcValCombo)
+
+sdf <- d[d$Word %in% words_with_multiple_ConcValCombo,]
+
+```
+
+# No disagreement about valence
+```{r}
+agr <- d %>% 
+  filter(Task == "Valence") %>% 
+  filter(Word %in% words_with_multiple_ConcValCombo) %>% 
+  mutate(Response.n = as.numeric(factor(Response, levels = c("negative", "positive"))) - 1) %>% 
+  group_by(Word,ConcValCombo) %>%
+  summarize(PropPositive = mean(Response.n))
+  # select(ID.true, Task,ConcValCombo, Word, WhoseList, Response)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=reorder(Word,PropPositive),y=PropPositive,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+# disagreement about concreteness
+```{r}
+agr <- d %>% 
+  filter(Task == "Concrete") %>% 
+  filter(Word %in% words_with_multiple_ConcValCombo) %>% 
+  mutate(Response.n = as.numeric(factor(Response, levels = c("abstract", "concrete"))) - 1) %>% 
+  group_by(Word,ConcValCombo) %>%
+  summarize(PropConcrete = mean(Response.n))
+  # select(ID.true, Task,ConcValCombo, Word, WhoseList, Response)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=reorder(Word,PropConcrete),y=PropConcrete,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+Clearly abstract
+```{r}
+agr <- d %>% 
+  filter(Task == "Concrete") %>% 
+  filter(Word %in% c("irritate","improve")) %>% 
+  mutate(Response.n = as.numeric(factor(Response, levels = c("abstract", "concrete"))) - 1) %>% 
+  group_by(ID.true,Word,WhoseList) %>%
+  summarize(PropConcrete = mean(Response.n))
+  # select(ID.true, Task,ConcValCombo, Word, WhoseList, Response)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=reorder(ID.true,PropConcrete),y=PropConcrete,fill=WhoseList)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~Word )+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+```{r}
+
+
+d <- d %>%
+  mutate(ConcValCombo = case_when(
+    Word == "irritate" ~ "abstract-negative",
+    Word == "improve" ~ "abstract-positive",
+    TRUE ~ ConcValCombo  # Keep original value if condition is not met
+  ))
+
+# agr <- agr %>%
+#   mutate(
+#     ConcValCombo = case_when(
+#       PropConcrete < 0.4 ~ sub("^[^-]+", "abstract", ConcValCombo),  # Replace before '-' with 'abstract'
+#       PropConcrete > 0.5 ~ sub("^[^-]+", "concrete", ConcValCombo),  # Replace before '-' with 'concrete'
+#       TRUE ~ ConcValCombo  # Keep other rows unchanged
+#     )
+#   )
+# 
+# corrected_words <- unique(agr[,c("Word","ConcValCombo")])
+
+```
+
+
+
+
+```{r}
+# Replace ConcValCombo in d for matching Words in corrected_words
+# d <- d %>%
+#   left_join(corrected_words, by = "Word", suffix = c("", "_corrected")) %>%
+#   mutate(
+#     ConcValCombo = if_else(!is.na(ConcValCombo_corrected), ConcValCombo_corrected, ConcValCombo)
+#   ) %>%
+#   select(-ConcValCombo_corrected)  # Remove the temporary column after replacement
+
+```
+
+
+
+
+
+```{r}
+agr <- d %>% 
+  filter(Task == "Concrete") %>% 
+  mutate(Response.n = as.numeric(factor(Response, levels = c("abstract", "concrete"))) - 1) %>% 
+  group_by(Word,ConcValCombo) %>%
+  summarize(PropConcrete = mean(Response.n))
+  # select(ID.true, Task,ConcValCombo, Word, WhoseList, Response)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=reorder(Word,PropConcrete),y=PropConcrete,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+# check out other potentiall mislabeled? AGAIN
+
+```{r}
+mislabeled <- d %>% 
+  filter(Task == "Concrete") %>% 
+  # filter(Word %in% words_with_multiple_ConcValCombo) %>% 
+  mutate(Response.n = as.numeric(factor(Response, levels = c("abstract", "concrete"))) - 1) %>% 
+  group_by(Word,ConcValCombo,WhoseList) %>%
+  summarize(PropConcrete = mean(Response.n)) %>% 
+  filter(
+    (PropConcrete > .5 & str_detect(ConcValCombo, "abstract")) |
+      (PropConcrete < .5 & str_detect(ConcValCombo, "concrete"))
+    )
+  # select(ID.true, Task,ConcValCombo, Word, WhoseList, Response)
+
+dodge = position_dodge(.9)
+ggplot(data=mislabeled, aes(x=reorder(Word,PropConcrete),y=PropConcrete,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~WhoseList) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+
+agr <- d %>% 
+  filter(Task == "Concrete") %>% 
+  filter(Word %in% mislabeled$Word) %>%
+  mutate(Response.n = as.numeric(factor(Response, levels = c("abstract", "concrete"))) - 1) %>% 
+  group_by(ID.true,Word,ConcValCombo) %>%
+  summarize(PropConcrete = mean(Response.n))
+  # select(ID.true, Task,ConcValCombo, Word, WhoseList, Response)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=reorder(ID.true,PropConcrete),y=PropConcrete,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~Word) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# heuristic solution: separate by .5 marker
+```{r}
+
+mislabeled_easy <- mislabeled %>%
+  mutate(
+    ConcValCombo = case_when(
+      PropConcrete < 0.5 ~ sub("^[^-]+", "abstract", ConcValCombo),  # Replace before '-' with 'abstract'
+      PropConcrete > 0.5 ~ sub("^[^-]+", "concrete", ConcValCombo),  # Replace before '-' with 'concrete'
+      TRUE ~ ConcValCombo  # Keep other rows unchanged
+    )
+  )
+
+# mislabeled2 <- unique(mislabeled_easy[,c("Word","ConcValCombo")])
+
+```
+
+```{r}
+dodge = position_dodge(.9)
+ggplot(data=mislabeled_easy, aes(x=reorder(Word,PropConcrete),y=PropConcrete,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity")
+  # facet_wrap(~Word) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Replace ConcValCombo in d for matching Words in corrected_words
+```{r}
+
+d <- d %>%
+  left_join(mislabeled_easy, by = "Word", suffix = c("", "_corrected")) %>%
+  mutate(
+    ConcValCombo = if_else(!is.na(ConcValCombo_corrected), ConcValCombo_corrected, ConcValCombo)
+  ) %>%
+  select(-ConcValCombo_corrected)  # Remove the temporary column after replacement
+
+```
+
+```{r}
+agr <- d %>% 
+  filter(Task == "Concrete") %>% 
+  filter(Word %in% mislabeled$Word) %>%
+  mutate(Response.n = as.numeric(factor(Response, levels = c("abstract", "concrete"))) - 1) %>% 
+  group_by(Word,ConcValCombo,Version) %>%
+  summarize(PropConcrete = mean(Response.n))
+  # filter(
+  #   (PropConcrete > .5 & str_detect(ConcValCombo, "abstract")) |
+  #     (PropConcrete < .5 & str_detect(ConcValCombo, "concrete"))
+  #   )
+  # select(ID.true, Task,ConcValCombo, Word, WhoseList, Response)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=reorder(Version,PropConcrete),y=PropConcrete,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~Word) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+```{r}
+agr <- d %>% 
+  filter(Task == "Concrete") %>% 
+  filter(Word == "convict") %>%
+  mutate(Response.n = as.numeric(factor(Response, levels = c("abstract", "concrete"))) - 1) %>% 
+  group_by(ID.true,ConcValCombo) %>%
+  summarize(PropConcrete = mean(Response.n))
+  # filter(
+  #   (PropConcrete > .5 & str_detect(ConcValCombo, "abstract")) |
+  #     (PropConcrete < .5 & str_detect(ConcValCombo, "concrete"))
+  #   )
+  # select(ID.true, Task,ConcValCombo, Word, WhoseList, Response)
+
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=reorder(ID.true,PropConcrete),y=PropConcrete,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### save it all to a csv?
+```{r}
+
+d$AccuracyBest <- mapply(function(response, pattern) {
+  ifelse(grepl(response, pattern), 1, 0)
+}, d$Response, d$ConcValCombo)
+
+# write.csv(d, "../data/p1-p4.csv")
+```
+
+
+
+
+# Whittling down and choosing the right words
+
+## Quantify variance
+
+
+```{r}
+# Filter those bad words out
+d.conc <- d %>% 
+  # filter(Word %in% words_with_multiple_ConcValCombo$Word) %>% 
+  filter(Task == "Concrete") %>% 
+  filter(!Word %in% words_with_prefixes$Word) %>% 
+  mutate(Response.n = as.numeric(factor(Response, levels = c("abstract", "concrete"))) - 1) # Convert to numeric and subtract 1
+
+# Filter those bad words out
+d.val <- d %>% 
+  # filter(Word %in% words_with_multiple_ConcValCombo$Word) %>% 
+  filter(Task == "Valence") %>% 
+  filter(!Word %in% words_with_prefixes$Word) %>% 
+  mutate(Response.n = as.numeric(factor(Response, levels = c("negative", "positive"))) - 1) # Convert to numeric and subtract 1
+```
+
+```{r}
+d.conc$AccuracyBest <- mapply(function(response, pattern) {
+  ifelse(grepl(response, pattern), 1, 0)
+}, d.conc$Response, d.conc$ConcValCombo)
+
+d.val$AccuracyBest <- mapply(function(response, pattern) {
+  ifelse(grepl(response, pattern), 1, 0)
+}, d.val$Response, d.val$ConcValCombo)
+```
+
+
+
+```{r}
+
+agr <- d.conc %>% 
+  group_by(Word,ConcValCombo) %>% 
+  summarize(MeanAccuracy = mean(AccuracyBest))
+  
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=reorder(Word,MeanAccuracy),y=MeanAccuracy,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+
+agr <- d.val %>% 
+  group_by(Word,ConcValCombo) %>% 
+  summarize(MeanAccuracy = mean(AccuracyBest),
+            AccuracyVariance = var(AccuracyBest))
+  
+dodge = position_dodge(.9)
+ggplot(data=agr, aes(x=reorder(Word,MeanAccuracy),y=MeanAccuracy,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+d.conc <- d.conc %>% 
+  # Group by version since we want to see how variance differs from each exp 
+  group_by(Word,Version) %>% 
+  mutate(ResponseVariance = var(Response.n),
+         LogRTVariance = var(LogReactionTime),
+         AccuracyVariance = var(AccuracyBest))
+
+d.val <- d.val %>% 
+  group_by(Word,Version) %>% 
+  mutate(ResponseVariance = var(Response.n),
+         LogRTVariance = var(LogReactionTime),
+         AccuracyVariance = var(AccuracyBest))
+
+```
+
+
+```{r}
+# these should look the same
+ggplot(d.conc, aes(ResponseVariance, fill=Version)) +
+  geom_density(alpha = .5)
+ggplot(d.conc, aes(AccuracyVariance, fill=Version)) +
+  geom_density(alpha = .5)
+  
+ggplot(d.conc, aes(LogRTVariance, fill=Version)) +
+  geom_density(alpha = .5)
+
+
+  
+
+# these should look more or less the same
+ggplot(d.val, aes(ResponseVariance, fill=Version)) +
+  geom_density(alpha = .5)
+ggplot(d.val, aes(AccuracyVariance, fill=Version)) +
+  geom_density(alpha = .5)
+
+ggplot(d.val, aes(LogRTVariance, fill=Version)) +
+  geom_density(alpha = .5)
+
+
+```
+
+
+```{r}
+agr <- d.conc %>% 
+  group_by(Version,Word) %>% 
+  summarize(PropConcrete = mean(Response.n),
+            MeanResponseVariance = mean(ResponseVariance))
+
+ggplot(agr, aes(x = PropConcrete, y = MeanResponseVariance,color = Version)) +
+  geom_point(size = 3, alpha = 0.7) +  # Scatter points
+  geom_smooth(method = "lm", se = FALSE) # Add trend line
+  # labs(
+  #   x = "Mean Proportion Concrete",
+  #   y = "Variance in Reaction Time",
+  #   title = "Variance by Mean Proportion Concrete"
+  
+```
+
+
+```{r}
+agr <- d.val %>% 
+  group_by(Version,Word) %>% 
+  summarize(PropPositive = mean(Response.n),
+            MeanResponseVariance = mean(ResponseVariance))
+
+
+ggplot(agr, aes(x = PropPositive, y = MeanResponseVariance,color = Version)) +
+  geom_point(size = 3, alpha = 0.7) +  # Scatter points
+  geom_smooth(method = "lm", se = FALSE) # Add trend line
+  # labs(
+  #   x = "Mean Proportion Concrete",
+  #   y = "Variance in Reaction Time",
+  #   title = "Variance by Mean Proportion Concrete"
+  
+```
+
+# Calculate upper variance cutoff for conc values
+
+```{r}
+mean(d.conc$ResponseVariance)
+sd(d.conc$ResponseVariance)
+
+upper_conc <- mean(d.conc$ResponseVariance) + sd(d.conc$ResponseVariance)
+upper
+```
+
+
+
+
+## Restrict
+
+```{r}
+
+
+```
+
+
+
+```{r}
+conc <- d.conc %>% 
+  filter(!Word %in% words_with_prefixes$Word) %>%
+  group_by(Word,ConcValCombo) %>%
+  summarize(PropConcrete = mean(Response.n),
+         MeanResponseVariance = mean(ResponseVariance),
+         MeanAccuracy = mean(AccuracyBest)) %>% 
+  filter((PropConcrete >= .8 | PropConcrete <= .2) &
+         (MeanResponseVariance < upper_conc) &
+           (MeanAccuracy >= .8))
+
+table(conc$ConcValCombo)
+
+dodge = position_dodge(.9)
+ggplot(data=conc, aes(x=reorder(Word,PropConcrete),y=PropConcrete,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Version) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  # guides(fill = "none")
+
+```
+
+
+# Calculate upper cutoff for variance on valance response values
+```{r}
+summary(d.val$ResponseVariance)
+mean(d.val$ResponseVariance)
+sd(d.val$ResponseVariance)
+
+upper_val<- mean(d.val$ResponseVariance) + sd(d.val$ResponseVariance)
+upper
+```
+
+
+```{r}
+
+val <- d.val %>% 
+  # Start from the words we know are good on concreteness values
+  filter(Word %in% conc$Word) %>% 
+  group_by(Word,ConcValCombo) %>%
+  summarize(PropPositive = mean(Response.n),
+         MeanResponseVariance = mean(ResponseVariance),
+         MeanAccuracy = mean(AccuracyBest))
+  # filter(
+  #   (PropPositive > .75 | PropPositive < .25) & 
+  #        (MeanResponseVariance < upper_val ) &
+  #     (MeanAccuracy < .75))
+
+table(val$ConcValCombo)
+
+dodge = position_dodge(.9)
+ggplot(data=val, aes(x=reorder(Word,PropPositive),y=PropPositive,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Version) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  # guides(fill = "none")
+
+
+
+```
+
+```{r}
+
+val <- d.val %>% 
+  # Start from the words we know are good on concreteness values
+  filter(Word %in% conc$Word) %>% 
+  group_by(Word,ConcValCombo) %>%
+  summarize(PropPositive = mean(Response.n),
+         MeanResponseVariance = mean(ResponseVariance),
+         MeanAccuracy = mean(AccuracyBest)) %>% 
+  filter(
+    (PropPositive >= .75 | PropPositive <= .25))
+
+         # (MeanResponseVariance < upper_val ) &
+      # (MeanAccuracy < .75))
+
+table(val$ConcValCombo)
+
+dodge = position_dodge(.9)
+ggplot(data=val, aes(x=reorder(Word,PropPositive),y=PropPositive,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Version) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  # guides(fill = "none"
+
+```
+
+keep val[concvalcombo = "concrete-positive"]
+
+```{r}
+dodge = position_dodge(.9)
+ggplot(data=val, aes(x=reorder(Word,MeanAccuracy),y=MeanAccuracy,fill=ConcValCombo)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Version) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  # guides(fill = "none"
+```
+
+
+
+```{r}
+ggplot(val, aes(x = MeanAccuracy, y = MeanResponseVariance,color = ConcValCombo)) +
+  geom_point(size = 3, alpha = 0.7) +  # Scatter points
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+
+
+```{r}
+val <- val %>% 
+  mutate(MeanResponseVarianceVal = MeanResponseVariance,
+         MeanAccuracyVal = MeanAccuracy)
+
+fin <- conc %>% 
+  filter(Word %in% val$Word) %>% 
+  filter(ConcValCombo != "concrete-positive") %>% 
+  mutate(MeanResponseVarianceConc = MeanResponseVariance,
+         MeanAccuracyConc = MeanAccuracy) %>% 
+  inner_join(val, by =c("Word","ConcValCombo")) %>% 
+  select(-c("MeanAccuracy.x","MeanAccuracy.y","MeanResponseVariance.x","MeanResponseVariance.y"))
+
+table(fin$ConcValCombo)
+
+
+ggplot(fin, aes(x = PropConcrete, y = PropPositive,color = ConcValCombo)) +
+  geom_point(size = 3, alpha = 0.7) +  # Scatter points
+  geom_smooth(method = "lm", se = FALSE)
+
+
+fin["AvgWeightedVariance"] = .5*fin["MeanResponseVarianceConc"] + .5*fin["MeanResponseVarianceVal"]
+```
+
+```{r}
+
+summary(fin$AvgWeightedVariance)
+sd(fin$AvgWeightedVariance)
+
+lim <- mean(fin$AvgWeightedVariance) + sd(fin$AvgWeightedVariance)
+t <- fin %>% 
+  filter(AvgWeightedVariance < lim) 
+
+table(t$ConcValCombo)
+  
+ggplot(data=t, aes(x=reorder(Word,PropConcrete),y=PropConcrete,fill=ConcValCombo)) +
+  geom_bar(position=position_dodge(.9),stat="identity") +
+  # facet_wrap(~Version) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  # guides(fill = "none")
+```
+
+
+keep: 
+1. val[ConcValCombo = "concrete-positive"]
+2. t[ConcValCombo == "concrete-negative]
+
+
+
+```{r}
+
+tt <- t %>% 
+  filter(ConcValCombo != "concrete-negative") 
+ 
+tt["NewAvgWeightedVariance"] = .5*tt["MeanResponseVarianceConc"] + .5*tt["MeanResponseVarianceVal"]
+
+tt["AvgWeightedAcc"] = .7*tt["MeanAccuracyConc"] + .3*tt["MeanAccuracyVal"]
+
+View(tt)
+
+limm <- mean(tt$NewAvgWeightedVariance) + .5*sd(tt$NewAvgWeightedVariance)
+
+ap_good <- tt %>% 
+  filter(MeanAccuracyConc >= MeanAccuracyVal) 
+
+
+lim1 <- mean(tt$MeanResponseVarianceConc) + sd(tt$MeanResponseVarianceConc)
+apgood2 <- tt %>% 
+  filter(MeanResponseVarianceConc < lim1)
+
+table(apgood2$ConcValCombo)
+
+
+```
+
+1. val[ConcValCombo = "concrete-positive"]
+2. t[ConcValCombo == "concrete-negative]
+3. apgood2[ConcValCombo == "abstract-negative]
+
+
+```{r}
+lim2 <- mean(apgood2$MeanResponseVarianceConc) + .5*sd(apgood2$MeanResponseVarianceConc)
+
+p <- apgood2 %>% 
+  filter(ConcValCombo == "abstract-positive") %>% 
+  filter(MeanAccuracyConc > MeanAccuracyVal |
+           MeanResponseVarianceConc < lim2) %>% 
+  arrange(MeanResponseVarianceConc) %>% 
+  head(10)
+
+
+table(p$ConcValCombo)
+
+
+```
+
+1. val[ConcValCombo = "concrete-positive"]
+2. t[ConcValCombo == "concrete-negative]
+3. apgood2[ConcValCombo == "abstract-negative]
+4. p
+
+```{r}
+# Step 1: Filter each data frame based on the specified criteria
+val_filtered <- val %>% filter(ConcValCombo == "concrete-positive")
+t_filtered <- t %>% filter(ConcValCombo == "concrete-negative")
+apgood2_filtered <- apgood2 %>% filter(ConcValCombo == "abstract-negative")
+
+# Step 2: Combine all filtered data frames and p
+combined_df <- bind_rows(
+  val_filtered,
+  t_filtered,
+  apgood2_filtered,
+  p
+)
+
+names(combined_df)
+table(combined_df$ConcValCombo)
+
+
+# Finally remove that one last row from abstract-negative  
+# Identify the row to remove
+row_to_remove <- combined_df %>%
+  filter(ConcValCombo == "abstract-negative") %>%
+  filter(
+    # MeanResponseVarianceConc == max(MeanResponseVarianceConc, na.rm = TRUE) & 
+    MeanAccuracyConc == min(MeanAccuracyConc, na.rm = TRUE)
+  )
+
+print(row_to_remove[,c("Word","MeanAccuracyConc","MeanResponseVarianceConc")])
+# Weel, it's doubt
+
+# Remove the identified row from combined_df
+combined_df <- combined_df %>%
+  filter(Word != "doubt")
+
+table(combined_df$ConcValCombo)
+```
+
+
+
+
+
+# Counterbalance
+
+Valence
+```{r}
+
+assign_values <- function(df) {
+  # Create Group, F_value, and J_value columns if they do not exist
+  if (!"Group" %in% colnames(df)) {
+    df$Group <- "A"  # Default value for Group if it doesn't exist
+  }
+  if (!"F_value" %in% colnames(df)) {
+    df$F_value <- NA  # Initialize F_value with NA if it doesn't exist
+  }
+  if (!"J_value" %in% colnames(df)) {
+    df$J_value <- NA  # Initialize J_value with NA if it doesn't exist
+  }
+  
+  # Create the first copy with Group == "A", F_value == "negative", J_value == "positive"
+  df_A <- df %>%
+    mutate(
+      Group = "A",  # Set Group to A
+      F_value = "negative",  # Set F_value to negative
+      J_value = "positive"  # Set J_value to positive
+    )
+  
+  # Create the second copy with Group == "B", F_value == "positive", J_value == "negative"
+  df_B <- df %>%
+    mutate(
+      Group = "B",  # Set Group to B
+      F_value = "positive",  # Set F_value to positive
+      J_value = "negative"  # Set J_value to negative
+    )
+  
+  # Combine both copies together
+  df_combined <- bind_rows(df_A, df_B)
+  
+  return(df_combined)
+}
+
+
+
+p5.val <- assign_values(combined_df)
+
+p5.val <- p5.val[,c("Word","ConcValCombo","Group","F_value","J_value")]
+
+View(p5.val)
+
+# write.csv(p5.val,"../data/pilot5_valance.csv")
+
+```
+
+
+
+
+```{r}
+
+
+assign_values <- function(df) {
+  # Create Group, F_value, and J_value columns if they do not exist
+  if (!"Group" %in% colnames(df)) {
+    df$Group <- "A"  # Default value for Group if it doesn't exist
+  }
+  if (!"F_value" %in% colnames(df)) {
+    df$F_value <- NA  # Initialize F_value with NA if it doesn't exist
+  }
+  if (!"J_value" %in% colnames(df)) {
+    df$J_value <- NA  # Initialize J_value with NA if it doesn't exist
+  }
+  
+  # Create the first copy with Group == "A", F_value == "negative", J_value == "positive"
+  df_A <- df %>%
+    mutate(
+      Group = "A",  # Set Group to A
+      F_value = "abstract",  # Set F_value to negative
+      J_value = "concrete"  # Set J_value to positive
+    )
+  
+  # Create the second copy with Group == "B", F_value == "positive", J_value == "negative"
+  df_B <- df %>%
+    mutate(
+      Group = "B",  # Set Group to B
+      F_value = "concrete",  # Set F_value to positive
+      J_value = "abstract"  # Set J_value to negative
+    )
+  
+  # Combine both copies together
+  df_combined <- bind_rows(df_A, df_B)
+  
+  return(df_combined)
+}
+
+
+p5.conc <- assign_values(combined_df)
+
+View(p5.conc)
+p5.conc <- p5.conc[,c("Word","ConcValCombo","Group","F_value","J_value")]
+
+
+# write.csv(p5.conc,"../data/pilot5_concrete.csv")
+
+```
+

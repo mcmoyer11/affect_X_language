@@ -1,0 +1,943 @@
+---
+title: "Choosing the most extreme values"
+author: "morgan moyer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(multcomp) # not available for this version of R
+library(stringr)
+library(textstem)
+library(tidyverse)
+library(car)
+library(irr)
+library(MASS)
+theme_set(theme_bw())
+cbPalette <- c("#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73","#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00","#009E73")
+this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(this.dir)
+source("../../../helpers.R")
+```
+
+```{r}
+# Corpus data from two different heuristics
+corpus.inter <- read.csv("../data/extreme_intersection.csv")
+corpus.inter$DataSource <- "human_norming_intersective"
+
+corpus.non.inter <- read.csv("../data/extreme.csv")
+corpus.non.inter$DataSource <- "human_norming"
+
+# ChatGPT choosing the words from the "complete" word list
+gpt.inter.val <- read.csv("../data/chatgpt_extreme-intersection_valence.txt", sep="\t")
+gpt.inter.val$DataSource <- "ChatGPT_extreme_inter"
+
+gpt.inter.conc <- read.csv("../data/chatgpt_extreme-intersection_concreteness.txt", sep="\t")
+gpt.inter.conc$DataSource <- "ChatGPT_extreme_inter"
+
+# ChatGPT choosing the words from the "complete" word list
+gpt.non.inter.val <- read.csv("../data/chatgpt_extreme_valence.txt", sep="\t")
+gpt.non.inter.val$DataSource <- "ChatGPT_extreme"
+
+gpt.non.inter.conc <- read.csv("../data/chatgpt_extreme_concrete.txt", sep="\t")
+gpt.non.inter.conc$DataSource <- "ChatGPT_extreme"
+
+
+# ChatGPT choosing the words from the "complete" word list
+gpt.total.conc <- read.csv("../data/GPT_40_conc.txt", sep="\t")
+gpt.total.conc$DataSource <- "ChatGPT_total"
+names(gpt.total.conc)[names(gpt.total.conc) == "Estimated...Concrete"] <- "Concrete.."
+names(gpt.total.conc)[names(gpt.total.conc) == "Estimated...Abstract"] <- "Abstract.."
+
+
+gpt.total.val <- read.csv("../data/GPT_40_val.txt", sep="\t")
+gpt.total.val$DataSource <- "ChatGPT_total"
+names(gpt.total.val)[names(gpt.total.val) == "Estimated...Positive"] <- "Positive.."
+names(gpt.total.val)[names(gpt.total.val) == "Estimated...Negative"] <- "Negative.."
+```
+
+# Convert the datasets into proportions
+
+## ChatGPT data
+```{r}
+# For Concreteness
+# Define the function to process a single data frame and create a new data frame with .prop added to its name
+process_and_rename_conc_dfs <- function(df_list) {
+  # Iterate over the list of data frames
+  for (df_name in names(df_list)) {
+    # Process the data frame
+    processed_df <- df_list[[df_name]] %>%
+      mutate(
+        Concrete.. = as.numeric(gsub("%", "", Concrete..)),  # Remove % and convert to numeric
+        PropConcrete = Concrete.. / 100                     # Convert to proportion
+      ) %>%
+      select(-c(Concrete.., Abstract..))                     # Drop the unwanted columns
+
+    # Dynamically assign the new data frame with ".prop" added to the name
+    new_name <- paste0(df_name, ".prop")
+    assign(new_name, processed_df, envir = .GlobalEnv)  # Assign it to the global environment
+  }
+}
+
+# Example usage
+conc_list <- list(
+                gpt.total.conc = gpt.total.conc,
+                gpt.inter.conc = gpt.inter.conc,
+                gpt.non.inter.conc = gpt.non.inter.conc
+                )  # Replace with actual data frames
+process_and_rename_conc_dfs(conc_list)
+
+# Now you should have gpt.pilot.conc.prop, df2.prop, and df3.prop created in the environment.
+
+# For Valence
+# Define the function to process a single data frame and create a new data frame with .prop added to its name
+process_and_rename_val_dfs <- function(df_list) {
+  # Iterate over the list of data frames
+  for (df_name in names(df_list)) {
+    # Process the data frame
+    processed_df <- df_list[[df_name]] %>%
+      mutate(
+        Positive.. = as.numeric(gsub("%", "", Positive..)),  # Remove % and convert to numeric
+        PropPositive = Positive.. / 100                     # Convert to proportion
+      ) %>%
+      select(-c(Positive.., Negative..))                     # Drop the unwanted columns
+
+    # Dynamically assign the new data frame with ".prop" added to the name
+    new_name <- paste0(df_name, ".prop")
+    assign(new_name, processed_df, envir = .GlobalEnv)  # Assign it to the global environment
+  }
+}
+
+val_list <- list(
+                gpt.total.val = gpt.total.val,
+                gpt.inter.val = gpt.inter.val,
+                gpt.non.inter.val = gpt.non.inter.val
+                )  # Replace with actual data frames
+process_and_rename_val_dfs(val_list)
+
+# Now you should have gpt.pilot.conc.prop, df2.prop, and df3.prop created in the environment.
+
+```
+
+
+## Convert Brys/War Likert scale ratings to proportions
+
+```{r}
+corpus.inter.prop <- corpus.inter %>% 
+  mutate(PropPositive = V.Mean.Sum / 9,
+         PropConcrete = Conc.M / 5) %>% 
+  select(Word, PropPositive, PropConcrete, DataSource)
+
+
+corpus.non.inter.prop <- corpus.non.inter %>% 
+  mutate(PropPositive = V.Mean.Sum / 9,
+         PropConcrete = Conc.M / 5) %>% 
+  select(Word, PropPositive, PropConcrete, DataSource)
+
+# Combine the dfs
+inter.val.total = rbind(corpus.inter.prop[,names(corpus.inter.prop) != "PropConcrete"],gpt.inter.val.prop)
+non.inter.val.total = rbind(corpus.non.inter.prop[,names(corpus.non.inter.prop) != "PropConcrete"],gpt.non.inter.val.prop)
+
+inter.conc.total = rbind(corpus.inter.prop[,names(corpus.inter.prop) != "PropPositive"],gpt.inter.conc.prop)
+non.inter.conc.total = rbind(corpus.non.inter.prop[,names(corpus.non.inter.prop) != "PropPositive"],gpt.non.inter.conc.prop)
+
+```
+
+
+# Measuring Extremity
+
+
+is one list or the other more extreme?
+
+Summary of Techniques:
+
+- Logit Transformation: Stretches out the proportions, making it easier to compare how close they are to the extremes.
+- Distance from Extremes: Directly calculates how far a proportion is from 0 or 1.
+- Beta Distribution Fit: Fits a Beta distribution to assess the concentration of proportions around extremes.
+- Variance of Proportions: Measures the spread of proportions, which can give insights into their proximity to extremes.
+
+
+
+## Transformation of Proportions: Logit or Log-Odds Transformation
+
+To assess how close proportions are to extremes (0 or 1), you can use the logit transformation. This transformation converts a proportion to a scale that stretches out the extremes, making them more comparable to central values.
+
+The logit transformation is defined as:
+logit(p)=log(p/(1-p))
+
+Where:
+
+    - pp is the proportion (between 0 and 1)
+    - The logit will be close to −∞−∞ when pp is near 0, and close to ∞∞ when pp is near 1.
+
+
+```{r}
+
+# Apply logit transformation
+# First for Valence
+corpus.inter.prop$LogOddsPos <- logit(corpus.inter.prop$PropPositive)
+corpus.non.inter.prop$LogOddsPos <- logit(corpus.non.inter.prop$PropPositive)
+
+# First for Concreteness
+corpus.inter.prop$LogOddsConc <- logit(corpus.inter.prop$PropConcrete)
+corpus.non.inter.prop$LogOddsConc <- logit(corpus.non.inter.prop$PropConcrete)
+log.odds <- rbind(corpus.inter.prop,corpus.non.inter.prop)[,c("Word","DataSource","LogOddsPos","LogOddsConc")]
+
+
+```
+
+### Plot LogOdds for Valence betwen intersective and non-intersective
+```{r}
+# Create the log-odds plot
+ggplot(log.odds, aes(x = DataSource, y = LogOddsPos)) +
+  geom_point(size = 4) +  # Scatter plot for log-odds
+  geom_line(group = 1) +  # Add a line connecting the points
+  labs(title = "Log-Odds (Logit) of ProportionPostive by heuristic",
+       y = "Log-Odds (Logit)",
+       x = "Data Source (heuristic)")
+
+```
+
+### Plot LogOdds for Concreteness betwen intersective and non-intersective
+```{r}
+# Create the log-odds plot
+ggplot(log.odds, aes(x = DataSource, y = LogOddsConc)) +
+  geom_point(size = 4) +  # Scatter plot for log-odds
+  geom_line(group = 1) +  # Add a line connecting the points
+  labs(title = "Log-Odds (Logit) of ProportionConcrete by heuristic",
+       y = "Log-Odds (Logit)",
+       x = "Data Source (heuristic)")
+
+```
+
+## Distance from the extremes
+
+Another simple approach is to compute the distance from the extremes (0 and 1). This is done by measuring the absolute difference between a proportion and the closest extreme.
+
+For a proportion pp:
+
+- Distance from 0: p
+- Distance from 1: 1−p
+- The minimum of these two values tells you how close pp is to either extreme.
+
+```{r}
+# Example proportions
+prop <- c(0.01, 0.05, 0.5, 0.95, 0.99)
+
+# Distance from closest extreme (0 or 1)
+distance_from_extreme <- pmin(prop, 1 - prop)
+distance_from_extreme
+```
+
+```{r}
+# First for Valence
+corpus.inter.prop$DistExtremePos <- pmin(corpus.inter.prop$PropPositive, 1 - corpus.inter.prop$PropPositive)
+corpus.non.inter.prop$DistExtremePos <- pmin(corpus.non.inter.prop$PropPositive, 1 - corpus.non.inter.prop$PropPositive)
+
+# First for Concreteness
+corpus.inter.prop$DistExtremeConc <- pmin(corpus.inter.prop$PropPositive, 1 - corpus.inter.prop$PropPositive)
+corpus.non.inter.prop$DistExtremeConc <- pmin(corpus.non.inter.prop$PropPositive, 1 - corpus.non.inter.prop$PropPositive)
+
+dist.extremes <- rbind(corpus.inter.prop,corpus.non.inter.prop)[,c("Word","DataSource","DistExtremePos","DistExtremeConc")]
+
+```
+
+### Plotting distance from extremes Valence
+```{r}
+agr <- dist.extremes %>% 
+  group_by(DataSource) %>% 
+  summarize(MeanDistExtremePos = mean(DistExtremePos))
+
+# Plot the distance from extremes
+ggplot(agr, aes(x = DataSource, y = MeanDistExtremePos, fill=DataSource)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = round(MeanDistExtremePos, 2)), vjust = -0.5) +
+  labs(title = "Mean Distance from Extremes (0 or 1) for Valence",
+       y = "Distance from Extreme (0 or 1)",
+       x = "Category") +
+  # theme_minimal() +
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  guides(fill = "none")
+
+```
+
+```{r,fig.width=10, fig.height=5}
+# Plot the distance from extremes
+ggplot(dist.extremes, aes(x = Word, y = DistExtremePos, fill=DataSource)) +
+  geom_bar(stat = "identity") +
+  # geom_text(aes(label = round(DistExtremePos, 2)), vjust = -0.5) +
+  labs(title = "Distance from Extremes (0 or 1) for Valence",
+       y = "Distance from Extreme (0 or 1)",
+       x = "Category") +
+  # theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  # guides(fill = "none")
+
+```
+
+
+
+
+### Plotting distance from extremes Concrete
+
+```{r}
+agr <- dist.extremes %>% 
+  group_by(DataSource) %>% 
+  summarize(MeanDistExtremeConc = mean(DistExtremeConc))
+
+# Plot the distance from extremes
+ggplot(agr, aes(x = DataSource, y = MeanDistExtremeConc, fill=DataSource)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = round(MeanDistExtremeConc, 2)), vjust = -0.5) +
+  labs(title = "Mean Distance from Extremes (0 or 1) for Concrete",
+       y = "Distance from Extreme (0 or 1)",
+       x = "Category") +
+  # theme_minimal() +
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  guides(fill = "none")
+
+```
+
+```{rfig.width=10, fig.height=5}
+# Plot the distance from extremes
+ggplot(dist.extremes, aes(x = Word, y = DistExtremeConc, fill=DataSource)) +
+  geom_bar(stat = "identity") +
+  # geom_text(aes(label = round(DistExtremeConc, 2)), vjust = -0.5) +
+  labs(title = "Distance from Extremes (0 or 1) for Concrete",
+       y = "Distance from Extreme (0 or 1)",
+       x = "Category") +
+  # theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  # guides(fill = "none")
+
+```
+
+
+
+
+
+## Beta distribution
+
+If you have a collection of proportions and want to model how close they are to the extremes, you can fit a Beta distribution, which is commonly used to model proportions.
+
+The Beta distribution has two parameters αα and ββ that control the shape of the distribution. If the values of αα and ββ are low (e.g., both less than 1), it indicates that the proportions are closer to 0 or 1.
+
+<!-- In R, you can use the fitdistr function from the MASS package to fit a Beta distribution to your data: -->
+
+```{r}
+# Fit Beta distributions for valence
+fit.inter.val <- fitdistr(corpus.inter.prop$PropPositive, dbeta, start = list(shape1 = 1, shape2 = 1))
+fit.non.inter.val <- fitdistr(corpus.non.inter.prop$PropPositive, dbeta, start = list(shape1 = 1, shape2 = 1))
+
+fit.inter.val
+fit.non.inter.val
+
+# Fit Beta distributions for valence
+fit.inter.conc <- fitdistr(corpus.inter.prop$PropConcrete, dbeta, start = list(shape1 = 1, shape2 = 1))
+fit.non.inter.con <- fitdistr(corpus.non.inter.prop$PropConcrete, dbeta, start = list(shape1 = 1, shape2 = 1))
+fit.inter.conc
+fit.non.inter.con
+
+```
+
+
+### Valence
+
+```{r}
+
+# Fit beta distribution for dataset 1
+fit1 <- fitdistr(corpus.inter.prop$PropPositive, dbeta, start = list(shape1 = 1, shape2 = 1))
+alpha1 <- fit1$estimate["shape1"]
+beta1 <- fit1$estimate["shape2"]
+
+# Fit beta distribution for dataset 2
+fit2 <- fitdistr(corpus.non.inter.prop$PropPositive, dbeta, start = list(shape1 = 1, shape2 = 1))
+alpha2 <- fit2$estimate["shape1"]
+beta2 <- fit2$estimate["shape2"]
+
+# Print fitted alpha and beta for both datasets
+print(paste("Intersective: alpha =", alpha1, "beta =", beta1))
+print(paste("Non-Intersective: alpha =", alpha2, "beta =", beta2))
+
+# Compare AIC values (lower AIC indicates a better fit)
+AIC1 <- fit1$loglik * -2 + 2 * 2  # AIC for dataset 1
+AIC2 <- fit2$loglik * -2 + 2 * 2  # AIC for dataset 2
+print(paste("AIC for Intersective:", AIC1))
+print(paste("AIC for Non-Intersective:", AIC2))
+
+# Create a sequence of values from 0 to 1 for plotting
+x <- seq(0, 1, length.out = 100)
+
+# Calculate beta densities for both datasets
+y1 <- dbeta(x, shape1 = alpha1, shape2 = beta1)
+y2 <- dbeta(x, shape1 = alpha2, shape2 = beta2)
+
+# Create dataframes for plotting
+df1 <- data.frame(x = x, y = y1, Dataset = "Intersective")
+df2 <- data.frame(x = x, y = y2, Dataset = "Non-Intersective")
+
+# Combine the dataframes
+df_combined <- rbind(df1, df2)
+
+# Plot the beta distributions for both datasets
+ggplot(df_combined, aes(x = x, y = y, color = Dataset)) +
+  geom_line(size = 1.2) +
+  labs(title = "Comparison of Beta Distribution Fits for Valence",
+       x = "Proportion",
+       y = "Density")
+  # theme_minimal() +
+  # scale_color_manual(values = c("blue", "red"))
+
+```
+
+### Concreteness
+
+```{r}
+
+# Fit beta distribution for dataset 1
+fit1 <- fitdistr(corpus.inter.prop$PropConcrete, dbeta, start = list(shape1 = 1, shape2 = 1))
+alpha1 <- fit1$estimate["shape1"]
+beta1 <- fit1$estimate["shape2"]
+
+# Fit beta distribution for dataset 2
+fit2 <- fitdistr(corpus.non.inter.prop$PropConcrete, dbeta, start = list(shape1 = 1, shape2 = 1))
+alpha2 <- fit2$estimate["shape1"]
+beta2 <- fit2$estimate["shape2"]
+
+# Print fitted alpha and beta for both datasets
+print(paste("Intersective: alpha =", alpha1, "beta =", beta1))
+print(paste("Non-Intersective: alpha =", alpha2, "beta =", beta2))
+
+# Compare AIC values (lower AIC indicates a better fit)
+AIC1 <- fit1$loglik * -2 + 2 * 2  # AIC for dataset 1
+AIC2 <- fit2$loglik * -2 + 2 * 2  # AIC for dataset 2
+print(paste("AIC for Intersective:", AIC1))
+print(paste("AIC for Non-Intersective:", AIC2))
+
+# Create a sequence of values from 0 to 1 for plotting
+x <- seq(0, 1, length.out = 100)
+
+# Calculate beta densities for both datasets
+y1 <- dbeta(x, shape1 = alpha1, shape2 = beta1)
+y2 <- dbeta(x, shape1 = alpha2, shape2 = beta2)
+
+# Create dataframes for plotting
+df1 <- data.frame(x = x, y = y1, Dataset = "Intersective")
+df2 <- data.frame(x = x, y = y2, Dataset = "Non-Intersective")
+
+# Combine the dataframes
+df_combined <- rbind(df1, df2)
+
+# Plot the beta distributions for both datasets
+ggplot(df_combined, aes(x = x, y = y, color = Dataset)) +
+  geom_line(size = 1.2) +
+  labs(title = "Comparison of Beta Distribution Fits for Concreteness",
+       x = "Proportion",
+       y = "Density")
+  # theme_minimal() +
+  # scale_color_manual(values = c("blue", "red"))
+
+```
+
+
+## Variance of proportions
+
+You can compute the variance of proportions to get a sense of how spread out they are. High variance in proportions usually indicates that some values are close to the extremes (0 or 1).
+
+The formula for the variance of proportions is:
+Var(p)=p(1−p)
+Var(p)=p(1−p)
+
+In R, you can calculate the variance for individual proportions or the overall variance for a set of proportions:
+
+```{r}
+# Calculate the variance of each proportion
+
+corpus.inter.prop$PropVariancePos <- corpus.inter.prop$PropPositive * (1 - corpus.inter.prop$PropPositive)
+corpus.non.inter.prop$PropVariancePos <- corpus.non.inter.prop$PropPositive * (1 - corpus.non.inter.prop$PropPositive)
+
+prop.var.val <- rbind(corpus.inter.prop,corpus.non.inter.prop)[,c("Word","DataSource","PropPositive","PropVariancePos")]
+
+corpus.inter.prop$PropVarianceConc <- corpus.inter.prop$PropConcrete * (1 - corpus.inter.prop$PropConcrete)
+corpus.non.inter.prop$PropVarianceConc <- corpus.non.inter.prop$PropConcrete * (1 - corpus.non.inter.prop$PropConcrete)
+
+prop.var.conc <- rbind(corpus.inter.prop,corpus.non.inter.prop)[,c("Word","DataSource","PropConcrete","PropVarianceConc")]
+
+prop.var.total <- inner_join(prop.var.val, prop.var.conc, by = c("Word", "DataSource"))
+
+# # Melt the specified columns
+# melted_data <- prop.var.total %>%
+#   mutate(
+#     # Calculate Proportion and Variance
+#     Proportion_Positive = PropPositive / PropConcrete,
+#     Variance_Positive = PropVariancePos / PropVarianceConc
+#   ) %>%
+#   select(Word, DataSource, Proportion_Positive, Variance_Positive) %>%
+#   pivot_longer(
+#     cols = c(Proportion_Positive, Variance_Positive),
+#     names_to = c("Measure", ".value"),
+#     names_pattern = "^(.*)$"
+#   ) %>%
+#   mutate(
+#     Measure = "Positive"  # All values from PropPositive belong to "Positive"
+#   ) %>%
+#   # Create a second part for Concrete
+#   bind_rows(data %>%
+#               mutate(
+#                 Proportion_Concrete = PropConcrete,
+#                 Variance_Concrete = PropVarianceConc
+#               ) %>%
+#               select(Word, DataSource, Proportion_Concrete, Variance_Concrete) %>%
+#               pivot_longer(
+#                 cols = c(Proportion_Concrete, Variance_Concrete),
+#                 names_to = c("Measure", ".value"),
+#                 names_pattern = "^(.*)$"
+#               ) %>%
+#               mutate(
+#                 Measure = "Concrete"  # All values from PropConcrete belong to "Concrete"
+#               )
+#             )
+```
+
+### Valence
+```{r,fig.width=10, fig.height=5 }
+# Plot the variance of proportions for both datasets
+ggplot(prop.var.val, aes(x = Word, y = PropVariancePos, fill = DataSource)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Variance of Proportions Valence",
+       x = "Word",
+       y = "Variance") +
+  # theme_minimal() +
+  # scale_fill_manual(values = c("blue", "red")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+# Plot the variance of proportions for both datasets
+ggplot(prop.var.val, aes(x = PropPositive, y = PropVariancePos, color = DataSource)) +
+  geom_point(size = 3) +
+  geom_line(size = 1) +
+  labs(title = "Variance of Proportions Valence",
+       x = "Proportion",
+       y = "Variance")
+  # theme_minimal() +
+  # scale_color_manual(values = c("blue", "red"))
+
+```
+
+### Concrete
+```{r,fig.width=10, fig.height=5}
+
+# Plot the variance of proportions for both datasets
+ggplot(prop.var.conc, aes(x = Word, y = PropVarianceConc, fill = DataSource)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Variance of Proportions Concrete",
+       x = "Word",
+       y = "Variance") +
+  # theme_minimal() +
+  # scale_fill_manual(values = c("blue", "red")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+```{r}
+# Plot the variance of proportions for both datasets
+ggplot(prop.var.conc, aes(x = PropConcrete, y = PropVarianceConc, color = DataSource)) +
+  geom_point(size = 3) +
+  geom_line(size = 1) +
+  labs(title = "Variance of Proportions Concrete",
+       x = "Proportion",
+       y = "Variance")
+  # theme_minimal() +
+  # scale_color_manual(values = c("blue", "red"))
+
+```
+
+
+# Look at the Agreement between Chat GPT and the Extreme Samples
+Between the two heuristics for choosing extreme examples, does Chat GPT agree with one more than the other?
+
+
+```{r,fig.width=10, fig.height=5}
+dodge = position_dodge(.9)
+ggplot(data=gpt.total.val.prop, aes(x=Word,y=PropPositive,fill=Word)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Word,ncol=5) +
+  # theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        # axis.title.x = element_blank()) # Remove x-axis title
+  ggtitle("ChatGPT Valence Estimates from Total List") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  guides(fill = "none")
+
+```
+
+```{r,fig.width=10, fig.height=5}
+dodge = position_dodge(.9)
+ggplot(data=gpt.total.conc.prop, aes(x=Word,y=PropConcrete,fill=Word)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Word,ncol=5) +
+  # theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        # axis.title.x = element_blank()) # Remove x-axis title
+  ggtitle("ChatGPT Concreteness Estimates from Total List") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  guides(fill = "none")
+
+```
+
+
+
+
+## Compare the words in the two Extreme lists
+
+
+### First Look at agreement in the two corpus heuristics
+
+These two lists have a lot of agreement
+
+### Exact Matches (Proportion of Agreement)
+```{r}
+X = corpus.inter$Word
+Y = corpus.non.inter$Word
+
+# Check for agreement between 'Response' columns
+agreement <- X == Y
+
+# Proportion of exact matches
+prop_agreement <- mean(agreement)
+print(prop_agreement)
+
+```
+
+### Cohen's Kappa statistic to measure agreement
+
+```{r}
+
+# Cohen's Kappa between two categorical columns
+kappa_result <- kappa2(data.frame(X, Y))
+print(kappa_result)
+
+# The output will provide a kappa statistic (value), where:
+# 
+#     0.81 - 1.00 = Almost perfect agreement
+#     0.61 - 0.80 = Substantial agreement
+#     0.41 - 0.60 = Moderate agreement
+#     0.21 - 0.40 = Fair agreement
+#     0.00 - 0.20 = Slight agreement
+
+```
+
+```{r}
+# Find common values
+common_values <- intersect(X, Y)
+length(common_values)
+print(common_values)
+
+
+# Words in df1 but not in df2
+diff <- setdiff(X, Y)
+print(diff)
+
+```
+
+
+
+# GPT Total Valence + Corpus
+
+Is one or other of the extreme heuristics more concordant with Chat GPT? 
+```{r}
+# Val + corpus inter
+are_identical <- identical(gpt.total.val.prop$Word, corpus.inter$Word)
+print(are_identical)
+
+# Find common values
+common_values <- intersect(gpt.total.val.prop$Word, corpus.inter$Word)
+length(common_values)
+print(common_values)
+
+# Val + corpus non-inter
+are_identical <- identical(gpt.total.val.prop$Word, corpus.non.inter$Word)
+print(are_identical)
+
+# Find common values
+common_values <- intersect(gpt.total.val.prop$Word, corpus.non.inter$Word)
+length(common_values)
+print(common_values)
+
+
+```
+#### Chat GPT words for valence
+```{r}
+print(gpt.total.val.prop$Word)
+```
+
+#### Chat GPT words for valence
+```{r}
+print(gpt.total.conc.prop$Word)
+```
+
+
+#### non-intersective heuristic
+```{r}
+print(corpus.non.inter$Word)
+```
+
+#### Intersective heuristic
+```{r}
+print(corpus.inter$Word)
+```
+
+
+
+
+# GPT Total Concrete + Corpus
+
+Is one or other of the extreme heuristics more concordant with Chat GPT? 
+```{r}
+# Val + corpus inter
+are_identical <- identical(gpt.total.conc.prop$Word, corpus.inter$Word)
+print(are_identical)
+
+# Find common values
+common_values <- intersect(gpt.total.conc.prop$Word, corpus.inter$Word)
+length(common_values)
+print(common_values)
+
+# Val + corpus non-inter
+are_identical <- identical(gpt.total.conc.prop$Word, corpus.non.inter$Word)
+print(are_identical)
+
+# Find common values
+common_values <- intersect(gpt.total.conc.prop$Word, corpus.non.inter$Word)
+length(common_values)
+print(common_values)
+```
+
+
+# Does ChatGPT replicate our corpus extreme norming?
+
+## Chat GPT graphs
+### GPT Extreme Valance
+```{r,fig.width=10, fig.height=5, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=gpt.non.inter.val.prop, aes(x=Word,y=PropPositive,fill=Word)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Word,ncol=5) +
+  # theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        # axis.title.x = element_blank()) # Remove x-axis title
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("ChatGPT Estimate of Human Responses for Extreme (Non-Intersective) Word List") +
+  guides(fill = "none")
+
+```
+
+```{r,fig.width=10, fig.height=5, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=gpt.inter.val.prop, aes(x=Word,y=PropPositive,fill=Word)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Word,ncol=5) +
+  # theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        # axis.title.x = element_blank()) # Remove x-axis title
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("ChatGPT Estimate of Human Responses for Extreme (Intersective) Word List") +
+  guides(fill = "none")
+
+```
+
+
+
+### GPT extreme concrete
+```{r,fig.width=10, fig.height=5, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=gpt.non.inter.conc.prop, aes(x=Word,y=PropConcrete,fill=Word)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Word,ncol=5) +
+  # theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        # axis.title.x = element_blank()) # Remove x-axis title
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("ChatGPT Estimate of Human Responses for Extreme (Intersective) Word List") +
+  guides(fill = "none")
+
+```
+
+```{r,fig.width=10, fig.height=5, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=gpt.inter.conc.prop, aes(x=Word,y=PropConcrete,fill=Word)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Word,ncol=5) +
+  # theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        # axis.title.x = element_blank()) # Remove x-axis title
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("ChatGPT Estimate of Human Responses for Extreme (Intersective) Word List") +
+  guides(fill = "none")
+
+```
+
+
+
+## For Valence, how much agreement was there with chatGPT
+
+
+### Intersective Heuristic
+
+```{r, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=inter.val.total, aes(x=DataSource,y=mean(PropPositive),fill=DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Task) +
+  ggtitle("Valence Responses for Extreme List (intersective) by DataSource")
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r, fig.width=10, height=5, echo=FALSE}
+# Boxplot of proportion_yes by DataSource and Word
+ggplot(inter.val.total, aes(x = Word, y = PropPositive, fill = DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  labs(title = "Proportion of 'Positive' Responses by Word and DataSource",
+       x = "Word",
+       y = "Proportion of Positive Responses") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r,fig.width=10, fig.height=15, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=inter.val.total, aes(x=DataSource,y=PropPositive,fill=DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~Word,ncol=5) +
+  theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        axis.title.x = element_blank()) # Remove x-axis title
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  # guides(fill = "none")
+```
+
+### Looking at agreement
+>>> actually this needs redone because the DFs aren't ordered in the right way to make the comparison legit
+
+```{r, eval=FALSE}
+# get the data correct format
+# Pivot the DataFrame to wide format
+inter.val.total.wide <- inter.val.total %>%
+  pivot_wider(
+    names_from = DataSource,
+    values_from = PropPositive,
+    names_prefix = "",  # Remove default prefix
+    names_glue = "{.value}_{DataSource}"  # Use custom naming for new columns
+  )
+# head(inter.val.total.wide)
+# Rename columns for clarity
+inter.val.total.wide <- inter.val.total.wide %>%
+  rename(
+    ChatGPT_PropPos = PropPositive_ChatGPT_extreme_inter,
+    Norming_PropPos = PropPositive_human_norming_intersective
+  )
+
+```
+
+
+
+
+### Non-Intersective Heuristic
+
+```{r, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=non.inter.val.total, aes(x=DataSource,y=mean(PropPositive),fill=DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Task) +
+  ggtitle("Valence Responses for Extreme List (non-intersective) by DataSource")
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r, fig.width=10, height=5, echo=FALSE}
+# Boxplot of proportion_yes by DataSource and Word
+ggplot(non.inter.val.total, aes(x = Word, y = PropPositive, fill = DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  labs(title = "Proportion of 'Positive' Responses by Word and DataSource",
+       x = "Word",
+       y = "Proportion of Positive Responses") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r,fig.width=10, fig.height=15, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=non.inter.val.total, aes(x=DataSource,y=PropPositive,fill=DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~Word,ncol=5) +
+  theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        axis.title.x = element_blank()) # Remove x-axis title
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  # guides(fill = "none")
+```
+
+
+
+## For Concreteness, how much agreement was there with chatGPT?
+
+
+### Intersective Heuristic
+
+```{r, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=inter.conc.total, aes(x=DataSource,y=mean(PropConcrete),fill=DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Task) +
+  ggtitle("Concrete Responses for Extreme List (intersective) by DataSource")
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r, fig.width=10, height=5, echo=FALSE}
+# Boxplot of proportion_yes by DataSource and Word
+ggplot(inter.conc.total, aes(x = Word, y = PropConcrete, fill = DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  labs(title = "Proportion of 'Concrte' Responses by Word and DataSource",
+       x = "Word",
+       y = "Proportion of Concrete Responses") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r,fig.width=10, fig.height=15, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=inter.conc.total, aes(x=DataSource,y=PropConcrete,fill=DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~Word,ncol=5) +
+  theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        axis.title.x = element_blank()) # Remove x-axis title
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  # guides(fill = "none")
+```
+
+
+
+
+### Non-Intersective Heuristic
+
+```{r, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=non.inter.conc.total, aes(x=DataSource,y=mean(PropConcrete),fill=DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  # facet_wrap(~Task) +
+  ggtitle("Concrete Responses for Extreme List (non-intersective) by DataSource")
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r, fig.width=10, height=5, echo=FALSE}
+# Boxplot of proportion_yes by DataSource and Word
+ggplot(non.inter.conc.total, aes(x = Word, y = PropConcrete, fill = DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  labs(title = "Proportion of 'Concrete' Responses by Word and DataSource",
+       x = "Word",
+       y = "Proportion of Concrete Responses") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r,fig.width=10, fig.height=15, echo=FALSE}
+dodge = position_dodge(.9)
+ggplot(data=non.inter.conc.total, aes(x=DataSource,y=PropConcrete,fill=DataSource)) +
+  geom_bar(position=dodge,stat="identity") +
+  facet_wrap(~Word,ncol=5) +
+  theme(axis.text.x = element_blank(),  # Remove x-axis labels
+        axis.title.x = element_blank()) # Remove x-axis title
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  # guides(fill = "none")
+```
+
