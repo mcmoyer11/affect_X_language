@@ -22,35 +22,84 @@ this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
 setwd(this.dir)
 source("../../../helpers.R")
 
-e1 <- read.csv("../data/exp1.csv", fill = TRUE)
+e1 <- read.csv("../data/exp1_raw.csv", fill = TRUE)
 e1["Version"] <- "Exp1"
 
+View(e1)
+
 e2 <- read.csv("../data/exp2.csv")
-e2["Version"] <- "Exp2"
+e2["Version"] <- "Exp2_long"
 
 ```
 
 
 ```{r}
-# Convert all columns except ResponseID to character
-e1[,-1] <- lapply(e1[,-1], as.character)
-# e2[,-1] <- lapply(e2[,-1], as.character)
 
-e1_long <- e1 %>%
-  pivot_longer(
-    cols = -ResponseID,           # All columns except 'ResponseID'
-    names_to = "Question",        # Name for the new column containing former column names
-    values_to = "Response"        # Name for the new column containing the data
-  )
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(purrr)
+
+wide_to_long <- function(df) {
+  # Identify the Word columns (start with "X.TO")
+  word_cols <- grep("^X\\.TO", names(df), value = TRUE)
+  
+  # Extract corresponding ReactionTime columns (next "Timing.Page.Submit.*" column after each Word column)
+  reaction_time_cols <- sapply(word_cols, function(word_col) {
+    word_index <- which(names(df) == word_col)
+    timing_col <- names(df)[word_index + 3]  # Assuming "Timing.Page.Submit" is always 3 columns after
+    return(timing_col)
+  }, USE.NAMES = TRUE)
+  
+  # Ensure names are aligned
+  names(reaction_time_cols) <- word_cols
+  
+  # Convert to long format
+  df_long <- df %>%
+    pivot_longer(
+      cols = all_of(word_cols),
+      names_to = "Word",
+      values_to = "Response"
+    ) %>%
+    mutate(
+      ReactionTime = map2_dbl(Word, ResponseID, 
+                              ~ df[[reaction_time_cols[.x]]][df$ResponseID == .y]),  # Match ReactionTime row-wise
+      Word = str_extract(Word, "(?<=X\\.TO\\.\\.\\.\\.)[A-Z]+")  # Extract actual word
+    ) %>%
+    select(ResponseID, Word, Response, ReactionTime)  # Keep only necessary columns
+
+  return(df_long)
+}
 
 
-View(e2)
-e2_long <- e2 %>%
-  pivot_longer(
-    cols = -ResponseID,           # All columns except 'ResponseID'
-    names_to = "Question",        # Name for the new column containing former column names
-    values_to = "Response"        # Name for the new column containing the data
-  )
+e1.long <- wide_to_long(e1)
+```
+
+```{r}
+View(e1)
+```
+
+
+```{r}
+
+# Function to process text
+# Function to process text
+process_text <- function(text) {
+  extracted <- str_extract_all(text, '"(.*?)"')[[1]]  # Extract text between quotes
+  cleaned <- tolower(str_replace_all(extracted, 'TO ', ''))  # Convert to lowercase and remove "TO "
+  cleaned <- str_replace_all(cleaned, '["/]', '')  # Remove double quotes and forward slash
+  cleaned <- str_trim(cleaned)  # Strip leading/trailing whitespace
+  return(paste(cleaned, collapse = " "))  # Combine multiple quotes back into a single string
+}
+# Apply function to the 'Question' column
+e2 <- e2 %>%
+  mutate(Processed_Question = sapply(Question, process_text))
+
+# View result
+View(e1)
+
+print(unique(e1$Processed_Question))
+
 ```
 
 

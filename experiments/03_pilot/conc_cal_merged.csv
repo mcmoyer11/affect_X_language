@@ -1,0 +1,19 @@
+Unnamed: 0_x,Word,V.Mean.Sum,Conc.M,Concreteness_x,Valence,ConcValCombo,Unnamed: 0_y,Group,F_value,J_value,Concreteness_y
+4893,gas,4.06,4.29,concrete,neutral,concrete-neutral,2,A,abstract,concrete,concrete
+4893,gas,4.06,4.29,concrete,neutral,concrete-neutral,12,B,concrete,abstract,concrete
+5142,grasshopper,6.05,4.91,concrete,positive,concrete-positive,3,A,abstract,concrete,
+5142,grasshopper,6.05,4.91,concrete,positive,concrete-positive,13,B,concrete,abstract,
+6533,kick,4.55,4.33,concrete,neutral,concrete-neutral,5,A,abstract,concrete,concrete
+6533,kick,4.55,4.33,concrete,neutral,concrete-neutral,15,B,concrete,abstract,concrete
+7170,marriage,7.56,2.51,neutral,positive,neutral-positive,4,A,abstract,concrete,neutral
+7170,marriage,7.56,2.51,neutral,positive,neutral-positive,14,B,concrete,abstract,neutral
+8829,polite,6.57,1.85,abstract,positive,abstract-positive,6,A,abstract,concrete,abstract
+8829,polite,6.57,1.85,abstract,positive,abstract-positive,16,B,concrete,abstract,abstract
+10607,shirt,5.56,4.94,concrete,neutral,concrete-neutral,0,A,abstract,concrete,concrete
+10607,shirt,5.56,4.94,concrete,neutral,concrete-neutral,10,B,concrete,abstract,concrete
+11566,sugar,6.56,4.87,concrete,positive,concrete-positive,9,A,abstract,concrete,concrete
+11566,sugar,6.56,4.87,concrete,positive,concrete-positive,19,B,concrete,abstract,concrete
+11987,theory,5.65,1.47,abstract,neutral,abstract-neutral,8,A,abstract,concrete,abstract
+11987,theory,5.65,1.47,abstract,neutral,abstract-neutral,18,B,concrete,abstract,abstract
+13168,whistle,5.7,4.42,concrete,neutral,concrete-neutral,7,A,abstract,concrete,concrete
+13168,whistle,5.7,4.42,concrete,neutral,concrete-neutral,17,B,concrete,abstract,concrete

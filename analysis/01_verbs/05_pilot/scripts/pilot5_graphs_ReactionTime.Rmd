@@ -72,20 +72,15 @@ d.inaccurate.removed <- d %>%
 # Sanity check
 length(unique(d.inaccurate.removed$ID.true))
 
-```
 
 # remove all inaccurate trials
-```{r}
+
 orig <- nrow(d.inaccurate.removed)
 d.inaccurate.removed <- d.inaccurate.removed %>% 
   filter(Accuracy == 1)
 nrow(d.inaccurate.removed)/orig*100
 
-```
 
-
-
-```{r}
 # Remove subjects with ReactionTime higher than 3x IQR
 summary(d.inaccurate.removed$LogReactionTime)
   #  Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
@@ -147,6 +142,7 @@ ggplot(agr, aes(x=Task, y=MeanReactionTime,fill=Task)) +
     geom_jitter(shape=16, position=position_jitter(0.2)) +
   guides(fill = "none")
 
+ggsave("../graphs/exp2.pdf",width = 3, height = 2)
 ```
 
 # ReactionTime by BlockOrder and Task
