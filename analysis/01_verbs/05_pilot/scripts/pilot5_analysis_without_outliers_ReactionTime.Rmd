@@ -152,20 +152,12 @@ d.inaccurate.removed <- d %>%
 # Sanity check
 length(unique(d.inaccurate.removed$ID.true))
 
-```
-
 # remove all inaccurate trials
-```{r}
 orig <- nrow(d.inaccurate.removed)
 d.inaccurate.removed <- d.inaccurate.removed %>% 
   filter(Accuracy == 1)
 nrow(d.inaccurate.removed)/orig*100
 
-```
-
-
-
-```{r}
 # Remove subjects with ReactionTime higher than 3x IQR
 summary(d.inaccurate.removed$LogReactionTime)
   #  Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 

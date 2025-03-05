@@ -22,7 +22,7 @@ this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
 setwd(this.dir)
 source("../../../helpers.R")
 
-e1 <- read.csv("../data/exp1_raw.csv", fill = TRUE)
+e1 <- read.csv("../data/processed.csv", fill = TRUE)
 e1["Version"] <- "Exp1"
 
 View(e1)

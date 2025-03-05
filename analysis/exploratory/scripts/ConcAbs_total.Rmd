@@ -215,7 +215,7 @@ ggplot(agr, aes(x = MeanReactionTime, y = MeanAccuracy, color = Task)) +
 
 
 
-ggsave("../graphs/ConcAbs_accXrt_2.pdf",width = 5, height = 4)
+ggsave("../graphs/ConcAbs_accXrt_2.pdf",width = 6, height = 3)
 
 ```
 
@@ -391,59 +391,6 @@ ggplot(data=agr, aes(x=reorder(ID.true,MeanAccuracy),y=MeanAccuracy,fill=Task)) 
   # guides(fill = "none")
 ```
 
-
-
-# First Remove participants who aren't super , aggregating over Task
-
-```{r}
-inacc.parts <- d %>% 
-  group_by(ID.true,Task) %>% 
-  summarise(MeanAccuracy = mean(Accuracy)) %>% 
-  filter(MeanAccuracy < .75)
-
-d.inaccurate.removed <- d %>% 
-  anti_join(inacc.parts, by = "ID.true")
-
-# remove all inaccurate trials
-orig <- nrow(d.inaccurate.removed)
-d.inaccurate.removed <- d.inaccurate.removed %>% 
-  filter(Accuracy == 1)
-nrow(d.inaccurate.removed)/orig*100
-
-
-quantile(d.inaccurate.removed$LogReactionTime, na.rm = TRUE)
-IQR(d.inaccurate.removed$LogReactionTime, na.rm = TRUE)*3 # 0.7526289
-
-cutoff.high <- quantile(d.inaccurate.removed$LogReactionTime, na.rm = TRUE)[4] + IQR(d.inaccurate.removed$LogReactionTime, na.rm = TRUE)*3 # 8.419261
-cutoff.low <- quantile(d.inaccurate.removed$LogReactionTime, na.rm = TRUE)[2] - IQR(d.inaccurate.removed$LogReactionTime, na.rm = TRUE)*3# 6.5088838.419261
-
-
-# remove subjects with ReactionTime higher than 3 x IQR
-df.outliers.removed <- subset(d.inaccurate.removed, (d.inaccurate.removed$LogReactionTime > cutoff.low) & (d.inaccurate.removed$LogReactionTime < cutoff.high))
-
-
-```
-
-
-
-# ReactionTime by Task
-```{r}
-
-agr <- df.outliers.removed %>%
-    group_by(Task,Word,Category) %>%
-    summarize(MeanReactionTime = mean(ReactionTime), 
-              CILow = ci.low(ReactionTime), 
-              CIHigh = ci.high(ReactionTime)) %>%
-    mutate(YMin = MeanReactionTime - CILow, 
-           YMax = MeanReactionTime + CIHigh)
-
-ggplot(agr, aes(x=Category, y=MeanReactionTime,fill=Task)) + 
-    geom_violin(trim=FALSE,alpha=.4) +
-    geom_jitter(shape=16, position=position_jitter(0.2)) +
-  guides(fill = "none")
-
-ggsave("../graphs/exp2_category.pdf",width = 3, height = 2)
-```
 
 
 
@@ -670,6 +617,7 @@ print(agr)
 ```
 
 
+
 # LogReactionTime by Task
 
 ```{r}
@@ -698,25 +646,27 @@ ggplot(agr, aes(x=Task, y=MeanLogReactionTime,fill=Task)) +
 ```{r}
 
 agr <- df.outliers.removed %>%
-    group_by(Task,Word) %>%
+    group_by(Task,Word,Category) %>%
     summarize(MeanReactionTime = mean(ReactionTime), 
               CILow = ci.low(ReactionTime), 
               CIHigh = ci.high(ReactionTime)) %>%
     mutate(YMin = MeanReactionTime - CILow, 
            YMax = MeanReactionTime + CIHigh)
 
-ggplot(agr, aes(x=MeanReactionTime, fill=Task)) +
-  geom_density(alpha = .4)
-
-ggplot(agr, aes(x=Task, y=MeanReactionTime,fill=Task)) + 
+ggplot(agr, aes(x=Category, y=MeanReactionTime,fill=Task)) + 
     geom_violin(trim=FALSE,alpha=.4) +
     geom_jitter(shape=16, position=position_jitter(0.2)) +
-    # geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25,position="dodge", show.legend = FALSE) +
-  # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   guides(fill = "none")
 
-# ggsave("../graphs/total_rt_violin.pdf",width = 4, height = 3)
+# ggsave("../graphs/exp2_category.pdf",width = 3, height = 2)
 ```
+
+# Analysis
+
+
+
+
+
 
 # Prop Conc/Val 
 ```{r}
@@ -1023,12 +973,16 @@ df_factors <- convert_except(df.outliers.removed, exclude_columns)
 ```{r, include=FALSE, warning=FALSE, echo=FALSE}
 # contrasts(df_factors$SwitchCombo)
 contrasts(df_factors$Task)
+contrasts(df_factors$Category)
+
+# reset category contrasts so noun is vase
+contrasts(df_factors$Category) <- contr.treatment(3, base = 2)
+
+contrasts(df_factors$Category)
 
 center = df_factors %>%
   mutate(
-         cAccuracy = as.numeric(Accuracy)-mean(as.numeric(Accuracy)),
-         cBlockOrder = as.numeric(BlockOrder)-mean(as.numeric(BlockOrder))
-         )
+         cTask = as.numeric(Task)-mean(as.numeric(Task))         )
   
   # droplevels()
 ```
@@ -1038,19 +992,19 @@ Yes
 
 ```{r}
 
-m = lmer(LogReactionTime ~ Task + (1|ID.true) + (1|Word), data=center)
+m = lmer(LogReactionTime ~ cTask + (1+cTask|ID.true) + (1+cTask|Word), data=center)
 summary(m)
 ```
 
 ```{r}
 table(center$Category)
-m = lmer(LogReactionTime ~ Category + (1|ID.true) + (1|Word), data=center)
+m = lmer(LogReactionTime ~ Category + (1+Category|ID.true) + (1|Word), data=center)
 summary(m)
 ```
 
 ```{r}
 
-m = lmer(LogReactionTime ~ Task*Category + (1|ID.true) + (1|Word), data=center)
+m = lmer(LogReactionTime ~ cTask*Category + (1+cTask|ID.true) + (1+cTask|Word), data=center)
 summary(m)
 ```
 
