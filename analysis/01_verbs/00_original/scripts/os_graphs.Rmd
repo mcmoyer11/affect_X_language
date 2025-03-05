@@ -72,7 +72,7 @@ summary(d$LogReactionTime)
 
 # First Remove participants who aren't super , aggregating over Task
 
-```{r}
+```{r, eval = FALSE, echo = FALSE}
 
 length(unique(d$ResponseID))
 inacc.parts <- d %>% 
