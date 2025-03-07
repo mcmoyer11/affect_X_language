@@ -1,0 +1,88 @@
+---
+  title: "Verbs,Nouns,Adjs"
+author: "morgan moyer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+  
+```{r setup, include=FALSE, warning=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(lme4)
+library(simr)
+library(pwr)
+
+cbPalette <- c("#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00")
+this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(this.dir)
+# source("../../helpers.R")
+d <- read.csv("../01_verbs/05_pilot/data/processed.csv")
+```
+
+# First, specify the experimental structure
+
+Task (2) x ConcValCombo (4)
+
+```{r}
+# Power analysis for ANOVA with 9 groups (3x3), medium effect size
+
+result <- pwr.anova.test(k = 8, f = 0.25, sig.level = 0.05, power = 0.8)
+print(result)
+```
+
+# Explanation
+
+This R code is performing a power analysis for a one-way ANOVA (Analysis of Variance) using the 'pwr' package. Let's break down the parameters:
+
+k = 9: This specifies that there are 9 groups in the ANOVA.
+
+f = 0.25: This is the effect size. According to Cohen's guidelines, 0.25 represents a medium effect size for ANOVA1.
+
+sig.level = 0.05: This sets the significance level (α) at 0.05, which is a common threshold for statistical significance.
+
+power = 0.8: This sets the desired power of the test at 0.8, which is a commonly used value in power analysis1.
+
+The function pwr.anova.test() calculates the sample size needed per group to achieve the specified power, given the other parameters. Since the 'n' parameter is not specified, the function will calculate and return the required sample size per group5.
+
+The result of this analysis will be stored in the 'result' variable, which will contain information about the required sample size per group, as well as the input parameters5.
+
+This power analysis helps researchers determine the appropriate sample size needed to detect a medium effect size in a one-way ANOVA with 9 groups, maintaining a significance level of 0.05 and a power of 0.815.
+
+
+# Usling LMER
+
+Yes, there are power analysis methods that use linear mixed-effects models (lmer) from the lme4 package in R. The most commonly recommended approach is to use simulation-based power analysis, which can be done using the 'simr' package258.
+
+The 'simr' package is specifically designed for power analysis of generalized linear mixed models, including those created with lmer. Here's a basic workflow:
+
+Fit your model using lmer
+
+Use the simr package to simulate data based on your model
+
+Estimate power by running multiple simulations
+
+A simple example of this process might look like:
+
+```{r}
+
+# Fit your model
+fit <- lmer(LogReactionTime ~ Task*ConcValCombo + 
+            (1+Task*ConcValCombo|Word) + 
+            (1+Task*ConcValCombo|ID.true) + 
+              # random slope for the repeated measure factor 
+              # and interaction term to represent the repetition
+            (1+Task|ID.true:Word), 
+            data = d)
+
+# Run power analysis
+power <- powerSim(fit, nsim = 200, n=80)
+print(power)
+
+```
+
+This approach allows you to calculate power for complex mixed-effects models, taking into account both fixed and random effects36. It's particularly useful for designs with multiple random factors, such as participants and items, which are common in many experimental settings.
+
+The simr package also provides tools for creating power curves, which can help you determine the required sample size for a desired level of power5. This can be especially helpful when planning studies or writing grant proposals.
+
+It's worth noting that while this simulation-based approach is flexible and powerful, it can be computationally intensive, especially for complex models or large datasets18.
+
+
