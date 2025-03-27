@@ -1,0 +1,256 @@
+------------------------------------
+
+Notes for Bourmayan et al paper
+
+------------------------------------
+
+
+------------------------------------
+
+
+blind sight?
+
+efficiency?
+do systems evolve towards efficiency?
+
+
+
+it seems that the physical vs psychological divison was or apriori intreeste rather than a dimension that resulted from studying the verbs themselves....
+
+so looking at verbs, it would benefit to be more data-driven about it rather than imposing the physical/psychological dimension brut force
+
+experiment 1:
+what exactly did the training look like? 
+
+
+the notion of affect here is much different from the notion that is used in the psycholoigcal literature....here already the notion is less immediate, and even in the experimental results theselves it is downstream of *judgement*, therefore missin ghge point of what the psychological literature 
+
+
+
+the question is whether, when it comes to MEANING, there are different components of meanin ghtat
+
+is the valence aspect of meaning part of hte linguistic representation?
+is the affetive component part of the linguistic representation?
+
+is it conventionalized/
+---> i don't think we can say that it is conventionalized ecause his iin some sense antithetical to the notion of conventionalization
+but  take the example of slurs...
+the feeling of disgust, is that a part of the conventional meaning? what do people say?
+
+
+
+
+Affective primacy hypothesis is about states of psysiological arousal in early stages of perception....lexical meaning is a much more downstream process
+
+
+million dollar question: at what point does conceptual level information enter in the workflow of perceptual processing?
+
+
+Does the arousal of a verb aide in processing?
+does the arousal of a verb affect judgements about the verb's meaning?
+
+affective vs descriptive meaning: which information is more salient for completing the (pragmatic) task at hand?
+
+
+
+Big Questions:
+Is valence an aspect of word meaning???
+Is valence processed quicker than descriptive meaning?
+
+
+>>>what are the relevant descriptive domains of the verbs meanings (that's separate from valence)?
+
+
+>>> valence as a physiological response vs. as semantic knowledge
+
+
+--------------------------------------------------------------------------
+polarity reversal:
+hating racism vs. loving racism
+neg + neg = pos / pos + neg = neg
+
+
+Interestingly: playing around with sentiment analysis models on huggingface.co
+
+Model A: (https://huggingface.co/lxyuan/distilbert-base-multilingual-cased-sentiments-student?text=i+hate+racism)
+
+"I hate racism"
+[negative: 0.971, neutral: 0.018, positive: 0.011]
+
+"I love racism"
+[negative: 0.185, neutral: 0.057, positive; .758]
+
+
+Model B: (https://huggingface.co/cardiffnlp/twitter-roberta-base-sentiment-latest)
+"I hate racism"
+[negative: 0.876, neutral: 0.108, positive: 0.016]
+
+"I love racism"
+[negative: 0.749, neutral: 0.200, positive; .051]
+
+
+how exactly would we want the model to respond?
+how would humans respond?
+
+
+--------------------------------------------------------------------------
+
+
+dossociating phys response from semantic judgement
+('experiencing as' vs 'judging as such')
+hating racism vs hating when my shoelaces are untied
++arousal vs -arousal
+
+
+
+****warriner et al found reall that arousal more predictive than valence per se
+
+
+CONCRETE MEASURES:
+control for similarity between pairs using semantic distance (Mikolov et al 2013, pereira et al 2016 from souter et al 2022)
+
+
+rather than domain, look at semantic similarity as a function of valence / arousal
+
+Although>>>>what is the relation btw valence and similarity? are they correllated? (if so, could be a confound)
+
+
+
+
+1. choose verbs based on valence/arousal ratings from warriner et al 2013
+
+
+concreteness ratings for verbs
+or imageability
+
+
+RT ~ concreteness * valence (RE & S for items and subjects)
+
+
+From Kousta (p. 8) : are abstract concepts lexically encoded stronger than concrete ones? this would make sense since abstract concepts don't necessarily have sensory information in the same way that concrete concepts would---therefore their primary "residence" would be in the mental knowledge/memory bank (lexicon?)
+
+
+
+
+
+Bourmayan paper:
+"valence question" is a proxy for evaluting emotive information
+
+
+
+
+conventionalization procedures for affective/valence information must be different than for other semantic acquisition procedures since the affective componenent is inherent normative
+>>>requires more complex social reasoning because it means understanding "good"/"bad"
+
+what if there was a novel word learning task?
+Concreteness (+,-) x Valence (+,-)
+what do the learning times look like?
+what do the response times look like?
+
+what does speed of acquisition imply for lexicalization? 
+valence information can be lexicalised faster than concreteness?
+
+looking at error rates, if there are more error rates with valence than baselines (a feature that's not a candidate for lexicalization? but what would that be), then 
+
+assuming that lexicalization facilitates processing?
+
+
+____
+Can the valence be so strong that it overrides the 
+
+
+derrangement of epitaphs was acknowledgement of failures of TC meaning
+even the TCs are queasy about it
+
+
+
+From the neuro side:
+
+EPN (~200-300ms): shows the initial response to the emotional content
+larger for emotionally valenced words than neural ()
+
+many psycholinguistic/statistical variables need to be controlled for, like word frequency, arousal, age of acquisition, familiarity, word length
+
+
+Q1: Is valence lexically represented? if so, is that meaning feature processed earlier than other , "descriptive" aspects of verb meaning?
+
+Q2: do "emotion words" give rise to a physiological (=emotion) response? Is this response faster than the 
+--> need to look at neuro data, or measure heart rate to answer
+
+
+
+------------------------------------------------------
+------------------------------------------------------
+Thoughts 27/2
+------------------------------------------------------
+------------------------------------------------------
+
+
+First, What is the content of the affective primacy hypothesis?
+
+
+It seems that there are several different signatures of emotion in the processing of any stimnulus
+
+- early visual processing (~100ms post-stimulus onsent)
+---> correlated with processing in the limbic system
+
+- early lexical access (~200ms pso)
+---> correlated with processing in the frontal lobe
+
+- semantic processing (~400ms pso)
+---> more distributed processing throughout the brain and recurrent through the limbic system again
+
+
+The exact timecourse of these processing stages can be subtly effected by various contextual or task relevant factors
+
+Different aspects of the task can differentially direct attention in the early stages (right?)
+
+
+
+
+So when we talk about the Affective Primacy Hypothesis, mayeb it's too simplistic?
+
+Zajonc:
+affective judgements
+
+
+
+
+
+------------------------------------------------------
+Summaries
+------------------------------------------------------
+
+------------------------------------------------------
+Kousta et al (2011): 
+"The representation of abstract words: why emotion matters"
+------------------------------------------------------
+
+
+
+
+
+------------------------------------------------------
+De Deyne et al (2014):
+"Graded structure in adjective categories"
+De Deyne, S., Voorspoels, W., Verheyen, S., Navarro, D., & Storms, G. (2014). Accounting for graded structure in adjective categories with valence-based opposition relationships. Language and Cognitive Processes, 29, 568-583.
+------------------------------------------------------
+
+---> control for typicality effects by-item
+
+
+------------------------------------------------------
+Ponz, A., Montant, M., Liegeois-Chauvel, C., Silva, C., Braun, M., Jacobs, A. M., & Ziegler, J. C. (2014). 
+Emotion processing in words:a test of the neural re-use hypothesis using surface and intracranial EEG. Social Cognitive and Affective Neuroscience
+------------------------------------------------------
+
+
+
+------------------------------------------------------
+Winter (2022)
+"Abstract concepts and emotion: cross-linguistic evidence and arguements against affective embodiment"
+------------------------------------------------------
+
+
+
+

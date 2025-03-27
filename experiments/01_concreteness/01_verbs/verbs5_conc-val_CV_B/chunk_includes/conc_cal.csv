@@ -1,0 +1,11 @@
+Word,V.Mean.Sum,Conc.M,Concreteness,Valence,ConcValCombo,Unnamed: 0_y,Group,F_value,J_value
+gas,4.06,4.29,concrete,neutral,concrete-neutral,12,B,abstract,concrete
+grasshopper,6.05,4.91,concrete,positive,concrete-positive,13,B,abstract,concrete
+kick,4.55,4.33,concrete,neutral,concrete-neutral,15,B,abstract,concrete
+marriage,7.56,2.51,neutral,positive,neutral-positive,14,B,abstract,concrete
+polite,6.57,1.85,abstract,positive,abstract-positive,16,B,abstract,concrete
+shirt,5.56,4.94,concrete,neutral,concrete-neutral,10,B,abstract,concrete
+sugar,6.56,4.87,concrete,positive,concrete-positive,19,B,abstract,concrete
+theory,5.65,1.47,abstract,neutral,abstract-neutral,18,B,abstract,concrete
+whistle,5.7,4.42,concrete,neutral,concrete-neutral,17,B,abstract,concrete
+insecure,2.3,1.84,abstract,negative,abstract-negative,12,B,abstract,concrete

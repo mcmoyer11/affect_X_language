@@ -1,0 +1,645 @@
+\documentclass[12pt,letterpaper,table,svgnames,dvipsnames]{article}
+
+% \begin{preamble}
+\usepackage[margin=1in]{geometry}
+% \usepackage{times}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+\usepackage{enumitem}
+\usepackage{apacite}
+% \usepackage{dblfloatfix}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{tcolorbox}
+\usepackage{multicol}
+\usepackage{makecell}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{url}
+
+\usepackage{graphicx}
+\graphicspath{ {/images/} }
+
+\usepackage{enumitem}%
+% Nested enumeration with numbers rather than letters
+\renewcommand{\labelenumii}{\theenumii}
+\renewcommand{\theenumii}{\theenumi.\arabic{enumii}.}
+
+% % To keep track of total pages
+% \usepackage{fancyhdr}
+% \usepackage[page]{totalcount}
+% \pagestyle{fancy}
+% \fancyhf{}
+% \cfoot{Page \thepage~of \totalpages}
+
+\usepackage{gb4e}
+\noautomath
+% \end{preamble}
+
+\definecolor{Purple}{RGB}{255,10,140}
+\newcommand{\NB}[1]{\textcolor{Purple}{Note to self: #1}}
+\newcommand{\mm}[1]{\textcolor{teal}{[mm: #1]}}
+
+\begin{document}
+% \begin{center}
+\noindent \Large\textbf{First Meeting: Overview of issues and thoughts about \\Affect $\cap$ Language}\\
+% \bigskip
+
+\large 
+\noindent Morgan Moyer \\ 
+\normalsize
+\noindent \today \\
+% \end{center}
+
+\hrule
+
+\bigskip
+\bigskip
+
+\tableofcontents
+
+\bigskip 
+\bigskip
+\hrule 
+
+% \noindent 
+
+
+\section{Briefly: A path forward as I see it}
+
+\begin{itemize}
+    \item Experiments 1 \& 2 the same with some small modifications
+        \begin{itemize}
+            \item Adding Neutral words
+
+            \item Rethinking descriptive foils for valence
+
+        \end{itemize}
+    
+    \item At least adding an Experiment 3 (priming)
+
+        \begin{itemize}
+            \item If valence is lexically represented, then it should give rise to priming effects
+            
+            \item Lexical decision task
+
+        \end{itemize}
+
+    \item Potentially Experiment 4 (corpus + experiment), though it may be difficult to execute in 18(16) months
+
+        \begin{itemize}
+            \item capturing the context sensitivity of affective meaning
+            \item polysemy of event structure / meaning
+        \end{itemize}
+\end{itemize}
+
+\section{Hypotheses}
+
+\subsection{Affect Primacy Hypothesis}
+
+\begin{itemize}
+    \item Is affect ``post-cognitive'' or ``pre-cognitive''?
+
+    \item ``It is further possible that we can like something or be afraid of it before we know precisely what it is and perhaps even \emph{without} knowing what it is,'' (Zajonc 1980, 154)
+
+
+    \item ``Preference need no inferences''
+
+    % \item Mere exposure effect: link to emotional conditioning in the amygdala?
+
+\end{itemize}
+
+\subsubsection{What is affect?}
+
+\begin{enumerate}
+    
+
+    \item ERP/EEG/fMRI studies to break down what exactly is the time course of emotion processing, how many different kinds of emotion/affect response are there
+
+        \begin{itemize}
+            \item Hot vs. cold (Zajonc 1980 and others)
+            \item Affective vs. Semantic valence (Itkes et al 2017)
+            \item Emotion laden vs. emotion label words (Pavlenko 2008, Betancourt et al 2024)
+        \end{itemize}
+
+    \item From ERP studies (with emo words) there are at least two consistent responses:
+        \begin{itemize}
+            \item Early posterior negativity (EPN) $\sim$200-300ms post-stimulus occipito-temporal region \\
+
+            Larger from Emo words than neutral words (e.g., `erotica' vs. `neudists' in Farkas, Oliver, Sabatinelli 2019)\\
+
+            Indicative of lexico-semantic processing; automatic, task-independent attention allocation\\
+
+            % (Although can be modulated by surface statistical features like word frequency)
+
+            \item Late Postive Complex (LPC) $\sim$400ms post stimulus with centro-parietal topography\\
+
+            Larger for Emo words than Neural words; Sometimes differences found between positive and negative\\
+
+            Evaluation and controlled attention; semantic processing\\
+
+            Modulation by stimulus type and task (=present if task requires lexical processing, absent if structural task)
+
+        \end{itemize}    
+    
+    \item Korber et al (2008) identified 6 functional groups of consistent neural co-activation during emotion processing! Many of these systems involve interactions between them
+
+        \begin{itemize}
+            \item We might try to functionally oppose cortical activity (locus of `cognition') with $\sim$ brain stem/midbrain ??
+
+            \item Brain \emph{circuits}: macro circuits connect distinct brain regions (Malezieux et al 2023)
+
+            \item Appetitive vs. aversive responses to sensory stimuli in e.g., taste receptors, but crucially \emph{flexibility} is a neuro(-bio)logical hallmark of emotion (Malezieux et al 2023, Tye 2018, Craige 2003, Liljencrantz \& Olausson 2014, Marshall et al. 2019)
+
+            \item Biological default dispositions that can be unlearned (amygdala)
+        \end{itemize}
+
+    \item Is the Affect / Cognition dichotomy still justified?
+
+\end{enumerate}
+
+\noindent \textbf{How does this hypothesis apply to language?} \\
+
+\mm{Side thought on lexical items and inferential role semantics, see end}
+
+
+\subsection{Lexical Valence Hypothesis}
+
+
+\begin{itemize}
+    \item Valence is encoded in the lexical entry (for some words)
+    \item Q: Just positive/negative? or neutral too?
+\end{itemize}
+
+
+\noindent This hypothesis is introduced at the end of the paper, but it's a linking hypothesis that's needed to bridge emotion and meaning.\\
+
+
+\noindent \textbf{Linking Question}: If affect is lexically represented, in virtue of what would we think that the lexical valence feature would be prior in the way the Affect First Hypothesis would state?\\
+
+
+\noindent One link is the Emotional Grounding Hypothesis: Since emotion is prior, emotional meaning activaes emotional pathways, therefore is also prior (because affective valence is prior, semantic valence is too)
+
+
+\subsection{The Emotional Embodied/Grounding Hypothesis}
+
+
+\begin{itemize}
+    \item Are abstract concepts grounded in emotion(al information)?
+
+    \item Since abstract concepts lack experiential (=sensori-motor) correlates, perhaps they are grounded in linguistic and in affective information
+
+    \item There \emph{may} be some evidence for embodiment in lexical processing but it's debated, and small effects (studies cited in Meteyand \& Vigliocco 2018)
+
+    \item Further question, to what extent does emotion ground all concepts? 
+    
+
+    \item Concrete/Abstract vs. Psychological/Physical? See below
+
+
+    \item Concreness vs. Valence: the ``inverted U'' pattern
+        \begin{itemize}
+            \item Kousta, Vigliocco, Vinson, Andrews and Del Campo (2011), ``The representation of abstract words''
+                \begin{itemize}
+                    \item Statistically, it seems valence and concreteness form an ``inverted u'' pattern relationship: more strongly valenced (postive and negative) words are less concrete; less strongly valenced words are more concrete.
+
+                    \item In contrast to typical result, they found abstract words were processed \emph{faster} than concrete words when the abstract words are highly valenced (pos/neg vs. neutral)
+                \end{itemize}
+
+            \item Support for: Boots in RT, accuracy, age of acquisition for highly valence abstract words vs. low valence (=neutral) abstract words, ERP effects for abstract but not concrete (Newcombe et al 2012, Pauligk et al, Vigliocco et al, Ponari et al)
+
+            \item Support against: highly valenced concrete words processed faster, ERP (EPN) effects only for concrete but not abstract...(Yao et al, Kanske \& Kotz, Palazova et al)
+            
+
+            \item Winter (2023), ``Abstract concepts and emotion: cross-linguistic evidence and arguments against affective embodiment''
+                \begin{itemize}
+                    \item That statistical tendency, is it real?
+
+                    \item Well, if you aggregated everything together, usind valence and concreteness as predictors, it seems like yes.
+
+                    \item However: closer examination of the data reveals several sub-clusters
+                       
+
+                            % 36:Borghi AM, Barca L, Binkofski F, Castelfranchi C, Pezzulo G, Tummolini L. (2019) Words as social tools: language, sociality and inner grounding in abstract concepts. 
+
+                            % 55: Villani C, Lugli L, Liuzza MT, Borghi AM. 2019 Varieties of abstract concepts and their multiple dimensions. Lang. Cogn. 11, 403–430. (doi:10. 1017/langcog.2019.23)
+
+                            % 61: Muraki EJ, Sidhu DM, Pexman PM. 2020 Heterogenous abstract concepts: is "ponder" different from "dissolve"? Psychol. Res. (doi:10.1007/ s00426-020-01398-x)
+
+                            % 62. Desai RH, Reilly M, van Dam W. 2018 The multifaceted abstract brain. Phil. Trans. R. Soc. B 373, 20170122. (doi:10.1098/rstb.2017.0122)
+
+
+                    \item Replacing concreteness with a Cluster predictor explains the data better
+
+                    \item And actually for several langauges the U-pattern reversed : Dutch, Indonesian, German, French and Mandarin Chinese
+
+                    \item  Abstract concepts are a heterogenous category (Borghi et al 2019; Villani et al 2019; Muraki et al 2020; Desai et al 2018) we need a better measure \\
+                    \mm{focus on sensory experience or perceptual strength}
+
+
+                    % 111: Juhasz BJ, Yap MJ. 2013 Sensory experience ratings for over 5,000 mono- and disyllabic words. Behav. Res. Methods 45, 160–168. (doi:10.3758/s13428- 012-0242-9)
+
+                    % 53: Connell L, Lynott D, Banks B. 2018 Interoception: the forgotten modality in perceptual grounding of abstract and concrete concepts. Phil. Trans. R. Soc. B 373, 20170143. (doi:10.1098/rstb.2017.0143)
+
+                    % 64: Connell L, Lynott D. 2012 Strength of perceptual experience predicts word processing performance better than concreteness or imageability. Cognition 125, 452–465. (doi:10.1016/j.cognition. 2012.07.010)
+
+                    % 112: Lynott D, Connell L, Brysbaert M, Brand J, Carney J. 2020 The Lancaster Sensorimotor Norms: multidimensional measures of perceptual and action strength for 40,000 English words. Behav. Res. Methods 52, 1271–1291. (doi:10.3758/s13428-019- 01316-z)
+
+                    % 113: Lynott D, Connell L. 2009 Modality exclusivity norms for 423 object properties. Behav. Res. Methods 41, 558–564. (doi:10.3758/BRM.41.2.558)
+
+
+
+
+
+                \end{itemize}
+        \end{itemize}
+
+\end{itemize}
+
+
+
+% \subsection{How is affect \emph{lexically} represented?}
+
+
+% \begin{itemize}
+%     \item       
+% ...but then, what ARE word meanings such that we might think that ``lexical afect'' or semantic valence is processed faster ? \NB{Can Skip to Section 3.1}
+
+
+%     \item Concreteness x valence literature, and then segue to motivate choice of psychological/physical distinction (include discusison of challenge of psychological verbs/words raised in the review)\\
+
+%     \item Infact, what is the best dimension to use as a foil for semantic valence?
+
+% \end{itemize}
+
+
+\section{Experimental Points}
+
+
+\subsection{Experiment 1: Norming / RT}
+
+
+\begin{itemize}
+
+    \item Two Tasks: Affect Judgement Task, Descriptive Task
+
+    \item Use continuous slider from one to the other. Because in fact, there may be vaguess in the boundaries and we can 'bin' the responses into 3 categories afterwards for model analysis and Exp 2
+
+    \item Necessary to test \textbf{neutral words}, because they are a control for the affect dimension....crucially to validate an emotional response you not only need to show it happens with the emotion word, but that it doesn't happen with the non-emotion word
+
+
+    \item RT $\sim$ Task(Affect, Desc)\\
+    Affect: RT $\sim$ Valence (+,-, neutral)\\
+    Desc: RT $\sim$ Conc (+,-)
+
+    % \item Lexical Decision Task: is it a word yes or no\\
+    % Valenced vs. neutral 
+
+
+\end{itemize}
+
+\subsection{Experiment 2: Similarity Judgement}
+
+
+\begin{itemize}
+    \item Speeded similarity judgement task.
+
+    \item Speeded response task logic: by forcing participants to respond as quickly as possible, you're not giving them time to engage in deliberate, effortful reasoning. Thus, so the logic goes, the quickest responses are candidate for automatic cogntiion (usually meaning part of the lexicon)
+
+    \item Comparison from (L)LMs: GloVE, BERT
+
+    \item Important to control for salience, b/c valence might be more salient for the similary judgement than the descriptive dimension if the descriptive dimension doesn't accurately capture the verb meanings
+    
+    % \item Condition (Valence x Conc) = 6 unique trial test types:
+    
+    % \begin{multicols}{3}
+
+    % +V x +C\\
+    % +V x -C\\
+    % oV x +C\\
+    % cV x -C\\
+    % -V x +C\\
+    % +V x -C\\
+
+    % Match Controls:\\
+    % +V x +V\\
+    % -V x -V\\
+    % oV x oV\\
+    % +C x +C\\
+    % -C x -C\\
+
+    % Mismatch Controls:\\
+    % +C x -C\\
+    % +V x -V\\
+    % oV x +V\\
+    % oV x -V
+    % \end{multicols}
+
+\end{itemize}
+
+
+\subsection{Proposed Experiment 3: Priming}
+
+\begin{itemize}
+\item If the Lexical Affect Hypothesis is seriously considered, than a priming study is a good (=well-established) bet.
+
+\item Logic: priming occurs when the prime and target words share some kind of representational link (deliberately vague here).
+
+\item If valence is a feature represented in the lexical entry for valenced words, then if the prime and target share the feature, priming will occur.
+
+
+\item Priming study\\
+Condition: Valence (3) x Concrete (2 or 3)\\
+RT $\sim$ Condition
+
+\end{itemize} 
+
+
+
+
+\subsection{Another possible study: Corpus/Experimental}
+
+\begin{itemize}
+    \item Goal: to capture some of the polysemy in the verb meaning
+
+    \item Step 1: extract naturalistic utterances of verbs. (+ 10 preceding lines of discourse)\\
+    Step 2: have participants rate those naturalistic occurences for valence, descriptive content.\\
+    Potential Step 3: Compare context effects by doing Step 2 but without the 10 preceding lines of discourse. Compare results.\\ 
+    (this is a methodology I've done before in my first postdoc with Judith Degen)
+
+    \item Thus, there might be a high context sensitivity of valence judgements
+
+
+        % \begin{itemize}
+        %     \item 
+        % \end{itemize}
+
+
+    \item It seems that words might change valence in sentential context, i.e., event structure is vague until event participants are specified (think: `thaw my heart' vs. `thaw the ice')
+    
+
+    \item How does the valence of a word change in the naturalistic context of a sentence?
+
+    \item By quantifying not only the frequency and distribution of valence in naturalistic context, we can compare the ratings from Experiment 1 to this study, matched on item, even as a predictor in the model
+
+\end{itemize}
+
+
+
+\subsection{General Experimental/Methodological points}
+
+\begin{enumerate}
+
+    \item Control for possible psycholinguistic confounds in the words used: 
+
+        \begin{enumerate}
+            \item Syntactic/morphological complexity of verb meaning may cause a counfound: transitivity, passivity, tense might affect measure of domain, i.e., instransitive and passive might lead less extreme ratings of physicality\\
+            ``The cat pleases me'' vs. ``I am pleased'' \\
+            $\rightarrow$ but these are specified in sentential context
+
+            \item Morphological markers of valence might make the valence judgement more salient and therefore faster\\
+            \mm{Response: on the item-by-item basis, are there difference for these morphologically marked verbs compared to the non marked?}
+
+            \item Word STD / Variance, how much consensus were there in responses?
+                \begin{itemize}
+                    \item some words may be more or less valenced, and that may affect RT
+                    \item some words may be more or less polysemous wrt to descriptive domain: ``thawing dinner'' vs. ``thawing emotions'' 
+                \end{itemize}
+            
+            \item Thoughts about the stimuli (probably related to point 1):
+
+                \begin{itemize}
+                    \item Polysemy: Some words differ in psychological/physical dimension in different contexts\\
+                    `fabricate a building' vs. `fabricate evidence'\\
+                    `my feelings thawed' vs. `the ice thawed'
+
+                    \item Passivity? `collapse'\\ 
+                    ? `I collapsed the building' vs. `The building collapsed'\\
+                    `that pleases me' vs. `I please you' 
+
+
+                    \item Are `disquiet',`solace' really verbs?
+
+
+                    \item Why is 'kiss' (2,1) less physical than `hug' (1,8)?
+
+                \end{itemize}
+
+
+        \end{enumerate}
+
+    \item Additionally, the literature suggest that the following variables can confound the results (note, some of these may more affect ERP results rather than RT)
+
+            \begin{enumerate}
+                \item by-item:
+                \begin{enumerate}[noitemsep]
+                    \item Frequency
+
+                    \item Word length (Hinojoa 2019 et al survey)
+
+                    \item Semantic Association using Word2Vec or BERT (following Souter at al 2023) -- Experiment 2
+
+                    \item Influences on abstract/concreteness (Strik Lievers, et al 2021):
+                        \begin{itemize}[noitemsep]
+                            \item Lexical category
+                            \item Etymology/morphological structure
+                        \end{itemize}
+
+                \end{enumerate}
+
+            \item by-participant:
+                \begin{enumerate}[noitemsep]
+                    \item Gender of part (Warriner et al 2013)
+
+                    \item Native language /  billinguallism
+                    % Gao F, Wu C, Fu H, Xu K, Yuan Z. Language Nativeness Modulates Physiological Responses to Moral vs. Immoral Concepts in Chinese–English Bilinguals: Evidence from Event-Related Potential and Psychophysiological Measures. Brain Sciences. 2023; 13(11):1543. https://doi.org/10.3390/brainsci13111543
+                \end{enumerate}
+
+
+    \end{enumerate}
+
+    \item Notes on general structure, reporting design, materials, methods and results
+        \begin{itemize}
+            \item The Lexical Valence Hypothesis isn't presented until the conclusion
+
+            \item Predictions from each hypothesis stated before the experimental results presented
+        \end{itemize}
+
+    \item Probably a different measure of abstractness, neither abstract/concrete nor physical/psyhological (re: discussion in Winter 2023)
+
+    \item Must include Neutral valence words, a critical comparison
+
+\end{enumerate}
+
+
+
+\section{Theoretical}
+
+\subsection{What is (affective) meaning?}
+
+\noindent \textbf{Psycholinguisitcs/cognitive science}\\
+Read: What are lexical items, What are concepts, and how are the two related?
+
+\begin{itemize}
+
+    \item Local vs. distributed (abstract) representations stored in semantic memory
+
+        \begin{itemize}
+            \item Local: abstract, algebraic
+                \begin{itemize}
+                    \item Associated network of words \\
+                    (Collins \& Loftus 1975, Collins \& Quillian 1969)
+
+                    
+                    \item Collection of binary features\\
+                    (Smith, Shoban \& Rips 1974, Tversky 1977)\\
+                    Similarity is overlap of features
+                \end{itemize}
+
+            \item Distributional: co-occurence statistics\\
+            (Harris 1970, Frith 1957, Wittgenstein 1953)
+            
+        \end{itemize}
+
+    \item Format: amodal or embodied ($\sim$ propositional or a-propositional)\\
+    NB: usually `embodied' is meant to oppose `information', but given the emerging science of biosemiotics and the gathering evidence for the existence of codes in biology, chemistry and thermodynamics ... 
+        \begin{itemize}
+
+            \item If valence, qua semantic/lexical affect, is indeed lexically represented, why would we think it should be accessed faster than descrptive meaning?
+
+            \item What is the link between the meaning of lexical affect feature and the primacy of emotion?
+
+        \end{itemize}
+\end{itemize}
+
+
+\noindent \textbf{Semantic Theory}
+
+\begin{itemize}
+
+    \item Referential (Pietroski's ``the extension dogma'') vs.  \rule{10em}{0.5pt}
+
+    % Referential (Pietroski: ``the extension dogma'') vs. Psychological theories of semantic content
+
+    \item The Extension Dogma: ``expressions are `true of' things, and the meaning of expression E determines the things E is true of, ''
+
+    \item What are the candiadate alternatives? Use-based, Pietroski-style, radical pragmatics? something else?
+
+    \item Pietroski: ``Meanings are recipes for how to build mental representations from lexical items....''
+
+
+        % \begin{itemize}
+
+        %     \item Meaning = lexical item/feature
+
+        %     \item Meaning = stored long-term declarative or procedural knowledge/memory\\
+        %     procedural = activates a motor system?\\
+        %     declarative = activates cognition....
+
+        % \end{itemize}
+\end{itemize}
+
+
+\noindent \textbf{Psycholinguisitcs and the Lexicon}
+
+
+\begin{itemize}
+    \item If Affect primacy is ``preferences need no inferences'', then in the case of `lexical affect' what does this mean? On many theories of the lexicon, components of a lexical entry are inference-generating (Pustejovsky \& Jackendoff?, inferential role semantics, tho Fodor \& Lepore counterarguments in ``Compositionality Papers'')
+
+    \item Can Fodor \& Lepore compositionality problems be solved by convergence zones (see Meteyand \& Vigliocco 2018 discussion section 4.3.1, citing Damasio 1989, Damasio \& Damasio 1994, Marting 2016, Simmons \& Barsalou 2003)
+\end{itemize}
+
+
+
+
+\subsection{Words in sentential context vs. isolation}
+
+
+\begin{itemize}
+    \item If `love' is lexically positive and `hate' is lexically negative, what about sign reversals:
+        \begin{exe}
+            \ex I love racism 
+            \ex I hate racism
+        \end{exe}
+    
+    \item these show polarity reversals, OR the lexical polarity is neutralised in the sentential context
+
+    \item alternatively, learning can change what's lexicalized (emotional conditioning)
+
+    \item if you grow up in an abusive household, you might not lexicalize `positive' valence for `love'
+
+    \item Though in a sense you might be able to acknowledge that, \emph{for most people} `love' is a positive feeling 
+
+
+    \item running a Corpus study would help answer these questions, i think
+
+\end{itemize}
+
+
+
+
+
+\subsection{Playing around: Linguistic tests for content types}
+
+Is the affective information targetable by linguistic tests for at-issueness, presupposition
+
+
+\begin{enumerate}
+    \item Explicit Conversational Rejection\\
+    A: Mary loves me.\\
+    B: No! It's a bad thing!\\
+    $\rightarrow$ Good to my ears, and what you seem to be negating is the Speaker A's (positive) attitude to the proposition.\\
+    but even these tests are defeasable (Simons, Bever, Tonhauser, Roberts collab?)
+
+    \item Cancelability\\
+    Mary loves me, and it's a bad thing.
+    $\rightarrow$ Not a contradiction
+
+    \item Explicit Propositional Negation\\
+    It's not the case that Mary loves me.
+    $\rightarrow$ does not negate the positive affect
+
+
+    \item Antecedent of the conditional\\
+    in AoC, does S still believe `love' is positive?\\
+    If Mary loves me, then I'll be upset.\\
+    If Mary loves me, then I'll be happy.\\
+    $\rightarrow$ Both are perfectly felicious. and neither entails that S beleievs that loving is a good thing.
+
+
+    If the king of france is bald, then there will be a rebellion.\\
+    $\Rightarrow$ S believes there is present king of france.
+
+    If my sister arrives late, I will be upset.\\
+    $\Rightarrow$ I have a sister.
+
+
+    BUT! Tense matters:\\
+    If my sister arrived late, then I would be upset. But since I don't have a sister, then it doesn't matter (i.e., the vacuously true case where both A and C are false)
+
+
+    \item Bound variable\\
+    Every boy loves his mother\\
+    = where for some of them, loving is good and for some of them loving is bad?\\
+    Context: Sam loves his mother and its positive feeling, Dean loves his mother and it's a negative thing (ew, is it a different sense of love?)
+
+
+    \item Speaker Commitment\\
+    A: Mary love me.\\
+    Did A say that Mary loving A is a good thing?\\
+    Intuition: No.\\
+    $\rightarrow$ The speaker is not committed to the affective content, therefore it is not part of the asserted content.
+
+
+
+    % \item 
+
+
+\end{enumerate}
+
+
+
+
+\end{document}

@@ -1,6 +1,7 @@
 *~
 *.RData
-*big_data_files/
+*/big_data_files/
+*/refs/
 */node_modules/
 *.bbl
 *.blg

@@ -1,0 +1,374 @@
+\documentclass[12pt,letterpaper,table,svgnames,dvipsnames]{article}
+
+% \begin{preamble}
+\usepackage[margin=1in]{geometry}
+% \usepackage{times}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+\usepackage{enumitem}
+\usepackage{apacite}
+% \usepackage{dblfloatfix}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{tcolorbox}
+% \usepackage{multicol}
+\usepackage{makecell}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{url}
+
+\usepackage{graphicx}
+\graphicspath{ {/images/} }
+
+\usepackage{enumitem}%
+% Nested enumeration with numbers rather than letters
+\renewcommand{\labelenumii}{\theenumii}
+\renewcommand{\theenumii}{\theenumi.\arabic{enumii}.}
+
+% Header/Footer
+
+\usepackage{fancyhdr}
+\usepackage[page]{totalcount}
+\pagestyle{fancy}
+\fancyhf{}
+% Header with name and title
+\rhead{Emotion $\cap$ Language}
+\lhead{\bfseries Morgan Moyer}
+
+% Footer to keep track of total pages
+\cfoot{Page \thepage~of \totalpages}
+
+
+
+\usepackage{bm}
+\usepackage{gb4e}
+\noautomath
+% \end{preamble}
+
+\definecolor{Purple}{RGB}{255,10,140}
+\newcommand{\ad}[1]{\textcolor{Purple}{[ad: #1]}}
+\newcommand{\mm}[1]{\textcolor{teal}{[mm: #1]}}
+
+\begin{document}\thispagestyle{empty} % Command removes header/footer on the first page
+% \begin{center}
+\noindent \Large\textbf{Emotion $\bm{\bigcap}$ Language}
+\bigskip
+
+\large 
+\noindent Morgan Moyer \\ 
+\normalsize
+\noindent \today \\
+% \end{center}
+
+\hrule
+
+% \bigskip
+% \bigskip
+
+
+\bigskip 
+
+
+
+\section{Issues}
+\begin{enumerate}[noitemsep]
+    \item What is the relevant intersection?
+        \begin{enumerate}[noitemsep]
+            \item How is emotion conveyed linguistically?
+            \item How do words encode emotion? How is emotion represented lexically?
+            \item How do speakers communicate emotionally?
+            \item How is emotion conveyed in communication?
+        \end{enumerate}
+    \item What is Emotion/Affect?
+        See, e.g., Itkes et al (2017), ``Dissociating affective and semantic valence''
+    
+        \begin{enumerate}[noitemsep]
+            \item A state of physiological arousal arising in response to some stimulus (the emotion response)
+                \begin{itemize}[noitemsep]
+                    \item There doesn't seem to be a single marker..i.e., multiple correllates to emotion in the body, 
+                \end{itemize}
+                
+            \item Linguistic content that triggers a physiological response (i.e., a bad slur)
+            
+            \item Linguistic content that refers to emotions (i.e., the verb ``to love'', or valence as a lexical feature)
+        \end{enumerate}
+    
+    \item Word recognition
+
+\end{enumerate}
+
+
+\begin{enumerate}[noitemsep]
+    \item The affective primacy hypothesis: is affective evaluation of an event prior to cognitive (/semantic) evaluation or identification of the event?
+    % \item NB, ``semantic'' here means conceptual/content based and doesn't 
+
+\end{enumerate}
+
+
+\section{A brief intro to the neuroscience of emotion}
+
+
+\begin{enumerate}
+    \item Three main frontal--subcortical pathways where emotion seems to be processed
+        \begin{itemize}
+            \item Amygdala
+            \item Periacqueductal gray (PAG)
+            \item Hypothalamus (Hy)
+        \end{itemize}
+
+
+    \item \textbf{Amygdala}
+        \begin{itemize}
+            \item Two almond-shaped clusters of nuclei, located in the temporal lobe of the cerbreum
+            \item Plays a primary role in processing of memory, decision making and emotional responses
+            \item Part of the limbic system
+            \item Rich in adrogen receptors: a hormone that binds to testosterone, regulates gene expression
+            \item \textbf{Emotional learning}:
+                \begin{itemize}
+                    \item formation and storage of memories associated with emotional events
+                    \item Classical conditioned learning
+                    \item Memories stored via long-term potentiation : a persistent strengthening of synapses based on recent patterns of neuronal activity (\~ Hebbian learning)
+                \end{itemize}
+        \end{itemize}
+
+    \item \textbf{Periacqueductal gray}: a.k.a. midbrain central gray
+        \begin{itemize}
+            \item Affect-induced physiological responses
+            \item Organism-wide resonses
+            \item Autonomic functions, motivated behavior, behavioral responses to threatening stimuli; Pain
+        \end{itemize}
+
+
+    \item \textbf{Hypothalamus}
+        \begin{itemize}
+            \item Affect-induced physiological responses; in particular threat and stress responses
+            \item Part of the limbic system
+            \item Responsable for regulating metabolic processes and the autonomic nervous system
+            \item Synthesizes and secretes neurohormones which stimulate or inhibit secretion of hormones from the thalamus
+            \item Controls body temperature, hunger, parenting and maternal attachment behavior, thirst, sleep, circadian rhythm, important for social behaviors (sexual and aggressive behaviors)
+
+        \end{itemize}
+
+    \item All these regions are part of the autonomic nervous system
+        \begin{itemize}
+            \item Considered a purely motor system
+            \item Unconscious body functions, heart rate, contraction force, digestion, respiratory rate, pupilary response, urination, sexual arousal, vasomotor activity
+            \item Fight or flight
+            \item Reflex actions (swallowing, vomiting, coughing, sneezing)
+        \end{itemize}
+
+    \item Theories of emotion
+
+        \begin{itemize}
+            \item Adaptive experiential grounding : association between an experience and physiological response to the experience forms a memory 
+
+            \item \textbf{Discrete/basic emotion approach} (Elkman 1992; Izard 1993; Panksepp 1998)\\
+            several discrete, biologically bounded categories of emotion (corresponding to our folk notions)
+
+            \item \textbf{Dimensional models} (Russell 2003; Russell and Barrett 1999; Cacioppo et al 1999; Watson and Tellegen 1985):
+            valance and arrousal
+
+            \item \textbf{Constructivist approach} (Barrett 2006, 2007; Russell 2003):\\
+            interplay of basic psychological processes that produce many emotional and affective states
+        \end{itemize}
+
+    \item Rampant heterogeneity in neural basis of emotion (Barrett \& Satpute 2013:
+    It seems there is no substatial neuroscientific or peripheral physiological ``signatures'' for discrete categories\\
+    Many brain areas can be multiply associated, and it seems the generalization is more about goal-directed mehavior and ``motivated learning''
+
+
+\end{enumerate}
+
+
+
+
+\section{Is emotion content processed faster than non-emotion content?}
+
+\subsection{Zajonc (1980, 2000): The affective primacy hypothesis}
+\begin{itemize}[noitemsep]
+    \item 
+\end{itemize}
+
+\subsection{Brain data}
+
+\subsubsection{ERP}
+Early P1 modulations between 800-120ms 
+
+Analysis: task dependence.....
+
+\noindent \textbf{Palazova et al (2013)}
+\begin{itemize}
+
+    \item emotional valence and concreteness effects in a lexical decision task (Indicate with button press whether the word is a word or not). Word rated pre-study for concreteness (seven point likert from -3 to 3) in a norming study, and valence ratings obtained from their own database and Berlin affective word list (Vo, Jacobs, \& Conrad 2006). The authors also collected ERP data to look at the timecourse of processing. 
+
+    \item In the RT data, participants responded faster to concrete than to abstract words, and neutral compared to both positive and negatively valenced words. Importantly, there was an interaction that came out in abstract words: participants were faster to respond to neutral abstract words than positive or negative abstract words. There was no such effect in concrete words.
+
+    \item As for the ERP data:
+        \begin{itemize}
+            \item Effects of emotion at multiple time windows: contrast between positive/negative and neutral words at 250-550 and 700-800ms
+            \item Also at 600-650ms there were differences only between negative and neural verbs
+            \item Effects of concreteness starting at 500ms (N700)
+            \item Interaction : Concrete words elicited valence contrasts (positive/negative versus neutral) earlier than abstract words (250-300 vs 300-350ms)
+            \item Also at 400-450ms 
+            \item Analysis of topographical differences indicated that emotion effects are all posterior negativitities while 
+        \end{itemize}
+
+    \item in sum, earlier emotion effects in concrete than in absstract words
+\end{itemize}
+
+
+
+\subsection{Behavioral data}
+
+\subsection{Theoretical issues}
+
+What do we do with non-truth conditional aspects of meaning?
+What is meaning, in light of the importance of non-truth-conditional / expressive aspects of meaning?
+
+
+\begin{enumerate}[noitemsep]
+    
+    \item Questions about Affective meaning:
+         \begin{enumerate}[noitemsep]
+
+            \item Is affect part of the literal meaning?
+                \begin{enumerate}[noitemsep]%
+                \item In light of affect / expressive meaning, can we maintain TC accounts of meaning?
+
+                \item many years of TC menaing proponents who stumble in the face of this kind of data 
+                        \begin{enumerate}[noitemsep]%
+                            \item Davidson's ``derangement'' (1986)%
+                            \item Kaplan, Kratzer on ``Oops'' and ``ouch''%
+                            % \item 
+                        \end{enumerate}
+            \end{enumerate}
+            
+            \item Which notion of `affect' is relevant to the present study?
+                \begin{enumerate}[noitemsep]
+                    \item valence as an feature of lexical meaning?
+                        $\rightarrow$ first, IS valence lexically represented?
+                    \item valence as an indication of an affective (=physiological) response 
+                    
+                    \item valence = affective semantic knowledge?
+                \end{enumerate}
+            
+            \item How is affective meaning (=affective semantic knowledge) psychologically represented?   
+                \begin{enumerate}[noitemsep]
+                    \item Is it part of the lexicon?
+                        ...How is the lexicon represented? as part of long-term memory? How is long-term memory behaviorally distinguished from other kinds of memory?
+                    \item 
+                \end{enumerate}
+            
+        \end{enumerate}   
+            
+        \item Questions about non-Affective Meaning:
+            \begin{enumerate}[noitemsep]
+                \item What is the best way to categorize the non-affectual component of verb meaning?
+                    \begin{itemize}[noitemsep]
+                        \item Expressive/Non-TC meaning (a.o.t. affective dimension)
+                        \item 
+                    \end{itemize}
+            \end{enumerate}    
+            
+            \item What is meaning?
+                \begin{itemize}[noitemsep]
+                    \item Expressive/Non-TC meaning (a.o.t. affective dimension)
+                    \item 
+                \end{itemize}
+                
+            \item What is the goal of the study?
+                \begin{enumerate}[noitemsep]
+                    \item Is affect (=VALENCE) lexically encoded?
+                    \item 
+                \end{enumerate}
+           
+            
+            
+            \item How does affect interact with conceptual representations?
+            \item Do conceptual representations *Always* trigger a physiological response?
+            \item Does the valence of a lexical item incur (correspond) with a physiological response?
+
+
+            
+        \end{enumerate}
+
+\begin{enumerate}[noitemsep]
+    \item 
+
+    \item Possible Methodologies
+        \begin{enumerate}[noitemsep]
+            \item Valenece Matching Task (Souter et al )
+            \item 
+            \item 
+        \end{enumerate}
+\end{enumerate}
+
+
+
+
+
+\begin{enumerate}[noitemsep]
+    \item Other Questions
+        \begin{enumerate}[noitemsep]
+            \item In the long run, are we testing cognitive penetrability? otherwise, why mention the firestone and scholl (2016) paper?
+            \item 
+            \item 
+        \end{enumerate}
+\end{enumerate}
+
+first the verbs need to be normed for the strength of their valence
+
+\begin{enumerate}[noitemsep]
+    \item Things to absolutely control for
+        \begin{enumerate}[noitemsep]
+            \item Gender (Warriner et al 2013)
+            \item Frequency
+            \item Native language  /  billinguallism
+            % Gao F, Wu C, Fu H, Xu K, Yuan Z. Language Nativeness Modulates Physiological Responses to Moral vs. Immoral Concepts in Chinese–English Bilinguals: Evidence from Event-Related Potential and Psychophysiological Measures. Brain Sciences. 2023; 13(11):1543. https://doi.org/10.3390/brainsci13111543
+            \item word length (cf. hinojoa 2019 et al survey)
+            \item controlling for word std wrt valence...some words being more or less valenced 
+            \item Semantic Association using Word2Vec or BERT (following souter at al 2023)
+
+
+        \end{enumerate}
+\end{enumerate}
+
+
+
+
+\begin{enumerate}[noitemsep]
+    \item What are the goals of this project?
+        \begin{enumerate}[noitemsep]
+            \item 
+            \item 
+            \item 
+        \end{enumerate}
+\end{enumerate}
+
+
+
+
+\section{Groundwork}
+First things first. Define what we mean when we say ``affect'': 
+
+
+
+\section{Current State of Knolwedge}
+
+\subsection{What we know from neuroscience}
+
+\subsubsection{Early Posterior Negativity}
+
+between 200-300 ms after stimulus onset
+
+\subsubsection{Late positive complex}
+
+
+
+
+
+
+
+\end{document}

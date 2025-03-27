@@ -1,0 +1,11 @@
+Word,V.Mean.Sum,Conc.M,Concreteness,Valence,ConcValCombo,Unnamed: 0_y,Group,F_value,J_value
+free,8.25,2.04,neutral,positive,neutral-positive,9,A,positive,negative
+grin,7.66,4.17,concrete,positive,concrete-positive,6,A,positive,negative
+hat,5.69,4.88,concrete,neutral,concrete-neutral,5,A,positive,negative
+icebox,5.67,4.71,concrete,neutral,concrete-neutral,4,A,positive,negative
+industry,5.07,3.29,neutral,neutral,neutral-neutral,3,A,positive,negative
+insecure,2.3,1.84,abstract,negative,abstract-negative,2,A,positive,negative
+invader,2.23,4.11,concrete,negative,concrete-negative,1,A,positive,negative
+jail,1.91,4.83,concrete,negative,concrete-negative,0,A,positive,negative
+joke,7.88,2.9,neutral,positive,neutral-positive,8,A,positive,negative
+kitten,7.58,4.86,concrete,positive,concrete-positive,7,A,positive,negative

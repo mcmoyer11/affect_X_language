@@ -1,0 +1,11 @@
+Word,Animacy,Task,F_value,J_value,Group
+elephant,animate,Animacy,animate,inanimate,A
+human,animate,Animacy,animate,inanimate,A
+teenager,animate,Animacy,animate,inanimate,A
+horse,animate,Animacy,animate,inanimate,A
+monkey,animate,Animacy,animate,inanimate,A
+chair,inanimate,Animacy,animate,inanimate,A
+table,inanimate,Animacy,animate,inanimate,A
+computer,inanimate,Animacy,animate,inanimate,A
+bottle,inanimate,Animacy,animate,inanimate,A
+clock,inanimate,Animacy,animate,inanimate,A

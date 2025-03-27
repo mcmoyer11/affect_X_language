@@ -10,6 +10,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(lme4)
 library(simr)
 library(pwr)
+library(MASS)  # For generating random data
+library(lme4)
 
 cbPalette <- c("#56B4E9", "#D55E00", "#009E73","#999999", "#E69F00")
 this.dir <- dirname(rstudioapi::getSourceEditorContext()$path)
@@ -25,34 +27,15 @@ Task (2) x ConcValCombo (4)
 ```{r}
 # Power analysis for ANOVA with 9 groups (3x3), medium effect size
 
-result <- pwr.anova.test(k = 8, f = 0.25, sig.level = 0.05, power = 0.8)
+# result <- pwr.anova.test(k = 2, f = 0.25, sig.level = 0.05, power = 0.8)
+
+result <- pwr.t.test(d = 0.5, sig.level = 0.05, power = 0.8, type = "two.sample")
+
 print(result)
 ```
 
-# Explanation
-
-This R code is performing a power analysis for a one-way ANOVA (Analysis of Variance) using the 'pwr' package. Let's break down the parameters:
-
-k = 9: This specifies that there are 9 groups in the ANOVA.
-
-f = 0.25: This is the effect size. According to Cohen's guidelines, 0.25 represents a medium effect size for ANOVA1.
-
-sig.level = 0.05: This sets the significance level (α) at 0.05, which is a common threshold for statistical significance.
-
-power = 0.8: This sets the desired power of the test at 0.8, which is a commonly used value in power analysis1.
-
-The function pwr.anova.test() calculates the sample size needed per group to achieve the specified power, given the other parameters. Since the 'n' parameter is not specified, the function will calculate and return the required sample size per group5.
-
-The result of this analysis will be stored in the 'result' variable, which will contain information about the required sample size per group, as well as the input parameters5.
-
-This power analysis helps researchers determine the appropriate sample size needed to detect a medium effect size in a one-way ANOVA with 9 groups, maintaining a significance level of 0.05 and a power of 0.815.
-
 
 # Usling LMER
-
-Yes, there are power analysis methods that use linear mixed-effects models (lmer) from the lme4 package in R. The most commonly recommended approach is to use simulation-based power analysis, which can be done using the 'simr' package258.
-
-The 'simr' package is specifically designed for power analysis of generalized linear mixed models, including those created with lmer. Here's a basic workflow:
 
 Fit your model using lmer
 
@@ -60,29 +43,156 @@ Use the simr package to simulate data based on your model
 
 Estimate power by running multiple simulations
 
-A simple example of this process might look like:
-
-```{r}
-
-# Fit your model
-fit <- lmer(LogReactionTime ~ Task*ConcValCombo + 
-            (1+Task*ConcValCombo|Word) + 
-            (1+Task*ConcValCombo|ID.true) + 
-              # random slope for the repeated measure factor 
-              # and interaction term to represent the repetition
-            (1+Task|ID.true:Word), 
-            data = d)
-
-# Run power analysis
-power <- powerSim(fit, nsim = 200, n=80)
-print(power)
-
-```
-
 This approach allows you to calculate power for complex mixed-effects models, taking into account both fixed and random effects36. It's particularly useful for designs with multiple random factors, such as participants and items, which are common in many experimental settings.
 
 The simr package also provides tools for creating power curves, which can help you determine the required sample size for a desired level of power5. This can be especially helpful when planning studies or writing grant proposals.
 
 It's worth noting that while this simulation-based approach is flexible and powerful, it can be computationally intensive, especially for complex models or large datasets18.
 
+
+```{r}
+
+# Fit your model
+fit <- lmer(LogReactionTime ~ Task + 
+            (1+Task|Word) + 
+            (1+Task|ID.true) + 
+              # random slope for the repeated measure factor 
+              # and interaction term to represent the repetition
+            (1+Task|ID.true:Word), 
+            data = d)
+
+summary(fit)
+# Run power analysis
+# 1. Modify the model to specify the desired sample size
+extended_fit <- extend(fit, along = "ID.true", n = 40)  # Replace "ID.true" with your grouping variable
+
+# 2. Run the power analysis on the extended model
+power <- powerSim(extended_fit, nsim = 200)
+print(power)
+
+```
+
+
+Power for predictor 'Task', (95% confidence interval):
+      100.0% (98.17, 100.0)
+
+Test: unknown test
+
+Based on 200 simulations, (107 warnings, 0 errors)
+alpha = 0.05, nrow = 9600
+
+Time elapsed: 0 h 28 m 18 s
+
+nb: result might be an observed power calculation
+
+
+```{r}
+
+
+# Extract fixed-effect estimates from the model
+# Extract fixed-effect estimates from the model
+beta <- fixef(fit)  # Fixed effects
+
+# Extract standard deviation of residuals (sigma) and random effects
+sigma_resid <- sigma(fit)  # Residual standard deviation
+var_components <- VarCorr(fit)  # Random effect variances
+
+# Generate new response values based on model estimates
+new_d$LogReactionTime <- rnorm(nrow(new_d), mean = beta[1], sd = sigma_resid)
+
+
+# Refit model on simulated data
+new_fit <- lmer(LogReactionTime ~ Task + 
+                (1+Task|Word) + 
+                (1+Task|ID.true) + 
+                (1+Task|ID.true:Word), 
+                data = new_d)
+
+summary(new_fit)
+# 2. Run the power analysis on the extended model
+power <- powerSim(new_fit, nsim = 200)
+print(power)
+```
+
+# This one seems to work
+
+```{r}
+# Simplify random effects:
+fit_simple <- lmer(LogReactionTime ~ Task + 
+                   (1 | Word) +          # Remove Task slope for Word
+                   (1 + Task || ID.true) +   # Uncorrelated slopes/intercepts
+                   (1 | ID.true:Word),   # Remove Task slope for interaction
+                 data = d)
+
+
+extended_fit <- extend(fit_simple, along = "ID.true", n = 20)  # Replace "ID.true" with your grouping variable
+
+# 2. Run the power analysis on the extended model
+power <- powerSim(extended_fit, nsim = 200)
+print(power)
+```
+
+## Second try n=40
+
+Power for predictor 'Task', (95% confidence interval):
+      100.0% (98.17, 100.0)
+
+Test: unknown test
+
+Based on 200 simulations, (199 warnings, 0 errors)
+alpha = 0.05, nrow = 9600
+
+Time elapsed: 0 h 11 m 11 s
+
+nb: result might be an observed power calculation
+
+
+
+
+## First try, n=80 is overpowered
+n=80 
+
+Power for predictor 'Task', (95% confidence interval):
+      100.0% (98.17, 100.0)
+
+Test: unknown test
+
+Based on 200 simulations, (200 warnings, 0 errors)
+alpha = 0.05, nrow = 19200
+
+Time elapsed: 0 h 21 m 17 s
+
+nb: result might be an observed power calculation
+
+
+TTL;DR
+Overpowered
+
+
+## Run a power curve
+```{r}
+fit <- lmer(LogReactionTime ~ Task + 
+            (1+Task|Word) + 
+            (1+Task|ID.true), 
+            # (1+Task|ID.true:Word), 
+            data = d)
+
+# Run the power curve
+power_curve <- powerCurve(fit_simple, along = "ID.true", breaks = seq(20, 80, by = 10), nsim = 200)
+
+# Plot the power curve
+plot(power_curve)
+
+summary(power_curve)
+isSingular(fit_simple, tol = 1e-4)
+
+```
+
+
+```{r}
+library(brms)
+brm_model <- brm(LogReactionTime ~ Task + (1 + Task | Word) + (1 + Task | ID.true), 
+                 data = d, prior = set_prior("normal(0,1)", class = "sd"))
+
+```
 
